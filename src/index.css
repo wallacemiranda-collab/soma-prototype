@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #0a2332;
+  background: #edf4f3;
+  font-family: "Inter", "Avenir Next", "Segoe UI", Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+.app-backdrop {
+  background:
+    radial-gradient(circle at 90% 4%, rgba(25, 124, 121, 0.14), transparent 30%),
+    radial-gradient(circle at 8% 86%, rgba(201, 167, 106, 0.1), transparent 26%),
+    #edf4f3;
+}
+
+.safe-bottom {
+  padding-bottom: max(0.7rem, env(safe-area-inset-bottom));
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}

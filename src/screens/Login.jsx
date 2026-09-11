@@ -1,13 +1,31 @@
 import { Apple, Eye, LockKeyhole, Mail } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import { PrimaryButton } from '../components/ui'
+import { signInWithEmail } from '../services/authService'
 
 export default function Login() {
   const navigate = useNavigate()
+  const [email, setEmail] = useState('marina@soma.app')
+  const [password, setPassword] = useState('soma1234')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    setErrorMessage('')
+    setIsSubmitting(true)
+
+    const { error } = await signInWithEmail(email, password)
+
+    setIsSubmitting(false)
+
+    if (error) {
+      setErrorMessage('Não foi possível entrar. Confira seu e-mail e senha.')
+      return
+    }
+
     navigate('/home')
   }
 
@@ -30,7 +48,8 @@ export default function Login() {
               <Mail className="h-5 w-5" />
               <input
                 type="email"
-                defaultValue="marina@soma.app"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 className="w-full bg-transparent text-soma-900 outline-none"
                 aria-label="E-mail"
               />
@@ -42,7 +61,8 @@ export default function Login() {
               <LockKeyhole className="h-5 w-5" />
               <input
                 type="password"
-                defaultValue="soma1234"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 className="w-full bg-transparent text-soma-900 outline-none"
                 aria-label="Senha"
               />
@@ -52,7 +72,14 @@ export default function Login() {
           <button type="button" className="block w-full pb-2 text-right text-sm font-semibold text-soma-600">
             Esqueci minha senha
           </button>
-          <PrimaryButton type="submit">Entrar</PrimaryButton>
+          {errorMessage && (
+            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              {errorMessage}
+            </p>
+          )}
+          <PrimaryButton type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Entrando...' : 'Entrar'}
+          </PrimaryButton>
         </form>
 
         <div className="my-8 flex items-center gap-4 text-xs text-soma-400">

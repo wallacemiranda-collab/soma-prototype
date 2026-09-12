@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
+import { brand } from '../config/brand'
 
 export default function Splash() {
   return (
@@ -26,7 +27,7 @@ export default function Splash() {
           transition={{ duration: 0.22, ease: 'easeOut' }}
         >
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-soma-300">
-            Medicina metabólica longitudinal
+            {brand.longTagline}
           </p>
           <h1 className="text-[2.6rem] font-semibold leading-tight tracking-tight">
             Sua saúde,
@@ -44,7 +45,9 @@ export default function Splash() {
             Começar agora
             <ArrowRight className="h-5 w-5" />
           </Link>
-          <p className="mt-6 text-center text-xs text-soma-300">SOMA · Integrar para transformar vidas</p>
+          <p className="mt-6 text-center text-xs text-soma-300">
+            {brand.name} · {brand.promise}
+          </p>
         </motion.div>
       </main>
     </div>

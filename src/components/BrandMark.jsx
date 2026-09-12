@@ -1,3 +1,5 @@
+import { brand } from '../config/brand'
+
 export default function BrandMark({ compact = false, inverse = false }) {
   return (
     <div className="flex items-center gap-3">
@@ -6,7 +8,9 @@ export default function BrandMark({ compact = false, inverse = false }) {
           compact ? 'h-10 w-10' : 'h-16 w-16'
         } ${inverse ? 'bg-white/15' : 'bg-soma-800'}`}
       >
-        <span className={`${compact ? 'text-2xl' : 'text-4xl'} font-semibold text-white`}>S</span>
+        <span className={`${compact ? 'text-2xl' : 'text-4xl'} font-semibold text-white`}>
+          {brand.initial}
+        </span>
       </div>
       <div>
         <div
@@ -14,11 +18,11 @@ export default function BrandMark({ compact = false, inverse = false }) {
             inverse ? 'text-white' : 'text-soma-900'
           }`}
         >
-          SOMA
+          {brand.name}
         </div>
         {!compact && (
           <p className={`mt-1 text-sm ${inverse ? 'text-soma-200' : 'text-soma-600'}`}>
-            Medicina metabólica contínua.
+            {brand.tagline}
           </p>
         )}
       </div>

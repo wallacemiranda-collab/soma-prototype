@@ -12,8 +12,9 @@ import {
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import MetabolicCard from '../components/MetabolicCard'
-import { achievements, profileOptions, user } from '../data/mockData'
 import { SectionTitle } from '../components/ui'
+import { brand } from '../config/brand'
+import { achievements, profileOptions, user } from '../data/mockData'
 
 const icons = { Bell, BookOpen, CircleHelp, ShieldCheck, Target, Trophy, Flame }
 
@@ -27,7 +28,7 @@ export default function Profile() {
           {user.avatar}
         </div>
         <h2 className="mt-4 text-xl font-semibold">Marina Alves</h2>
-        <p className="text-sm text-soma-500">marina@soma.app</p>
+        <p className="text-sm text-soma-500">{brand.demoUser.email}</p>
         <span className="mt-3 rounded-full bg-soma-100 px-4 py-1.5 text-xs font-semibold text-soma-700">
           {user.level}
         </span>

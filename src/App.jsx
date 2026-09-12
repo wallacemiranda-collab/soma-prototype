@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import MobileShell from './components/MobileShell'
 import ScrollToTop from './components/ScrollToTop'
+import { brand } from './config/brand'
 import Education from './screens/Education'
 import Evolution from './screens/Evolution'
 import Habits from './screens/Habits'
@@ -12,6 +14,10 @@ import Profile from './screens/Profile'
 import Splash from './screens/Splash'
 
 export default function App() {
+  useEffect(() => {
+    document.title = brand.siteTitle
+  }, [])
+
   return (
     <>
       <ScrollToTop />

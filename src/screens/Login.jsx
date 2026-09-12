@@ -3,12 +3,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import { PrimaryButton } from '../components/ui'
+import { brand } from '../config/brand'
 import { signInWithEmail } from '../services/authService'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('marina@soma.app')
-  const [password, setPassword] = useState('soma1234')
+  const [email, setEmail] = useState(brand.demoUser.email)
+  const [password, setPassword] = useState(brand.demoUser.password)
   const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 

@@ -1,3 +1,5 @@
+import { brand } from '../config/brand'
+
 export const user = {
   name: 'Marina',
   greeting: 'Boa tarde',
@@ -47,7 +49,7 @@ export const profileOptions = [
   { label: 'Objetivos metabólicos', detail: '3 objetivos acompanhados', icon: 'Target' },
   { label: 'Preferências', detail: 'Lembretes e notificações', icon: 'Bell' },
   { label: 'Privacidade clínica', detail: 'Controle seus dados', icon: 'ShieldCheck' },
-  { label: 'Ajuda e suporte', detail: 'Fale com a SOMA', icon: 'CircleHelp' },
+  { label: 'Ajuda e suporte', detail: brand.supportLabel, icon: 'CircleHelp' },
 ]
 
 export const timeline = [

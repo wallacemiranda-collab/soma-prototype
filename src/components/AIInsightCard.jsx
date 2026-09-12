@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react'
+import { brand } from '../config/brand'
 import MetabolicCard from './MetabolicCard'
 
 export default function AIInsightCard({ children }) {
@@ -10,7 +11,7 @@ export default function AIInsightCard({ children }) {
         </span>
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.17em] text-soma-500">
-            Insight SOMA
+            Insight {brand.name}
           </p>
           <p className="mt-1 text-sm leading-5 text-soma-800">{children}</p>
         </div>

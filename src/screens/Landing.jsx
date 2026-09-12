@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, HeartPulse, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
+import { brand } from '../config/brand'
 
 const benefits = [
   {
@@ -42,13 +43,13 @@ export default function Landing() {
 
           <div className="relative mt-14">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-soma-300">
-              Saúde metabólica como serviço
+              {brand.commercialCategory}
             </p>
             <h1 className="mt-4 text-[2.65rem] font-semibold leading-[1.02] tracking-tight">
               O cuidado metabólico que continua entre consultas.
             </h1>
             <p className="mt-5 text-base leading-7 text-soma-100">
-              SOMA ajuda pacientes e profissionais a transformar dados, hábitos e educação em uma
+              {brand.name} ajuda pacientes e profissionais a transformar dados, hábitos e educação em uma
               jornada contínua, humana e motivadora.
             </p>
 
@@ -84,7 +85,7 @@ export default function Landing() {
         <section className="px-6 pb-8">
           <h2 className="text-2xl font-semibold tracking-tight">Por que agora?</h2>
           <p className="mt-3 text-sm leading-6 text-soma-600">
-            O mercado precisa de cuidado preventivo, recorrente e mensurável. SOMA nasce para
+            O mercado precisa de cuidado preventivo, recorrente e mensurável. {brand.name} nasce para
             conectar comportamento, dados e orientação em uma experiência pronta para pilotos.
           </p>
 

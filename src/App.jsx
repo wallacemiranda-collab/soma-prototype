@@ -5,7 +5,9 @@ import Education from './screens/Education'
 import Evolution from './screens/Evolution'
 import Habits from './screens/Habits'
 import Home from './screens/Home'
+import Landing from './screens/Landing'
 import Login from './screens/Login'
+import Pricing from './screens/Pricing'
 import Profile from './screens/Profile'
 import Splash from './screens/Splash'
 
@@ -14,7 +16,9 @@ export default function App() {
     <>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Splash />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/splash" element={<Splash />} />
+        <Route path="/planos" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
         <Route element={<MobileShell />}>
           <Route path="/home" element={<Home />} />

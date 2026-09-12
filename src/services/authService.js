@@ -35,6 +35,10 @@ function clearDemoSession() {
   localStorage.removeItem(DEMO_SESSION_KEY)
 }
 
+function getAuthRedirectUrl() {
+  return `${window.location.origin}/home`
+}
+
 export async function signInWithEmail(email, password) {
   if (!isSupabaseConfigured) {
     const user = createDemoUser(email)
@@ -82,6 +86,30 @@ export async function signUpWithEmail(email, password, fullName) {
   })
 
   return { data, error, mode: 'supabase' }
+}
+
+export async function signInWithGoogle() {
+  if (!isSupabaseConfigured) {
+    const user = createDemoUser('google.demo@soma.app', 'Usuário Google')
+    saveDemoSession(user)
+
+    return {
+      data: {
+        user,
+      },
+      error: null,
+      mode: 'demo',
+    }
+  }
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: getAuthRedirectUrl(),
+    },
+  })
+
+  return { data, error, mode: 'supabase', redirecting: !error }
 }
 
 export async function signOut() {

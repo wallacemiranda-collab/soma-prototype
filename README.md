@@ -2,7 +2,7 @@
 
 Protótipo navegável mobile-first da SOMA, plataforma de medicina metabólica longitudinal, criado com React, Vite, Tailwind CSS, Framer Motion e base preparada para Supabase.
 
-O app funciona em modo demo quando as variáveis do Supabase não estão configuradas. Ao adicionar as credenciais, login, cadastro, sessão persistente, rotas protegidas e logout passam a usar Supabase Auth.
+O app funciona em modo demo quando as variáveis do Supabase não estão configuradas. Ao adicionar as credenciais, login, cadastro, login com Google, sessão persistente, rotas protegidas e logout passam a usar Supabase Auth.
 
 ## Telas e fluxo
 
@@ -73,6 +73,8 @@ Para cadastro aberto, confira em Supabase Auth se a confirmação de e-mail est�
 
 - Confirmação ligada: o usuário cria conta e precisa confirmar o e-mail antes de entrar.
 - Confirmação desligada: o usuário entra logo após criar conta.
+
+Para login com Google, ative o provedor em `Authentication > Providers > Google` e configure as URLs indicadas em `SUPABASE_SETUP.md`.
 
 Tabelas iniciais:
 

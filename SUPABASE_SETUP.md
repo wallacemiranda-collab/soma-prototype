@@ -94,6 +94,7 @@ Funcionalidades prontas:
 
 - Entrar com e-mail e senha.
 - Criar conta com nome, e-mail e senha.
+- Entrar com conta Google.
 - Manter sessão ativa.
 - Proteger telas internas.
 - Sair da conta pelo Perfil.
@@ -111,6 +112,44 @@ Authentication > Providers > Email
 
 Configure conforme o piloto comercial.
 
-## 7. Estado atual do app
+## 7. Login com Google
+
+No Supabase:
+
+```text
+Authentication > Providers > Google
+```
+
+Ative o provedor Google e informe:
+
+- Client ID
+- Client Secret
+
+No Google Cloud Console, configure o callback autorizado do Supabase:
+
+```text
+https://SEU-PROJECT-REF.supabase.co/auth/v1/callback
+```
+
+No Supabase, confira também as URLs permitidas:
+
+```text
+Authentication > URL Configuration
+```
+
+Use:
+
+```text
+Site URL:
+https://soma-prototype-nc87.vercel.app
+
+Redirect URLs:
+https://soma-prototype-nc87.vercel.app/home
+http://localhost:5173/home
+```
+
+O app redireciona o login Google para `/home` depois da autenticação.
+
+## 8. Estado atual do app
 
 Sem variáveis, o app continua em modo demo para não quebrar o protótipo.

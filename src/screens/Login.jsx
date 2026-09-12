@@ -1,4 +1,4 @@
-import { Apple, Eye, LockKeyhole, Mail, UserRound } from 'lucide-react'
+import { Chrome, Eye, LockKeyhole, Mail, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
@@ -9,13 +9,14 @@ import { useAuth } from '../contexts/AuthContext'
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn, signUp } = useAuth()
+  const { signIn, signInGoogle, signUp } = useAuth()
   const [mode, setMode] = useState('signin')
   const [fullName, setFullName] = useState('Marina Alves')
   const [email, setEmail] = useState(brand.demoUser.email)
   const [password, setPassword] = useState(brand.demoUser.password)
   const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false)
 
   const isSignUp = mode === 'signup'
   const destination = location.state?.from?.pathname ?? '/home'
@@ -46,6 +47,24 @@ export default function Login() {
     }
 
     navigate(destination, { replace: true })
+  }
+
+  async function handleGoogleSignIn() {
+    setErrorMessage('')
+    setIsGoogleSubmitting(true)
+
+    const result = await signInGoogle()
+
+    if (result.error) {
+      setIsGoogleSubmitting(false)
+      setErrorMessage('Não foi possível entrar com Google. Tente novamente.')
+      return
+    }
+
+    if (result.mode === 'demo') {
+      setIsGoogleSubmitting(false)
+      navigate(destination, { replace: true })
+    }
   }
 
   return (
@@ -138,9 +157,14 @@ export default function Login() {
           ou continue com
           <span className="h-px flex-1 bg-soma-100" />
         </div>
-        <button className="flex w-full items-center justify-center gap-3 rounded-2xl border border-soma-100 bg-white py-4 font-semibold text-soma-800">
-          <Apple className="h-5 w-5 fill-soma-800" />
-          Continuar com Apple
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={isGoogleSubmitting}
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-soma-100 bg-white py-4 font-semibold text-soma-800 disabled:opacity-70"
+        >
+          <Chrome className="h-5 w-5" />
+          {isGoogleSubmitting ? 'Conectando...' : 'Continuar com Google'}
         </button>
         <p className="mt-auto pt-10 text-center text-sm text-soma-600">
           {isSignUp ? 'Já tem conta?' : 'Ainda não tem conta?'}{' '}

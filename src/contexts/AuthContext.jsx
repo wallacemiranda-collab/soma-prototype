@@ -3,6 +3,7 @@ import {
   getCurrentSession,
   onAuthStateChange,
   signInWithEmail,
+  signInWithGoogle,
   signOut as signOutService,
   signUpWithEmail,
 } from '../services/authService'
@@ -68,6 +69,16 @@ export function AuthProvider({ children }) {
     return { ...result, needsEmailConfirmation: true }
   }
 
+  async function signInGoogle() {
+    const result = await signInWithGoogle()
+
+    if (!result.error && result.mode === 'demo') {
+      setSession({ user: result.data.user })
+    }
+
+    return result
+  }
+
   async function signOut() {
     const result = await signOutService()
 
@@ -85,6 +96,7 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user ?? null,
       signIn,
+      signInGoogle,
       signOut,
       signUp,
     }),

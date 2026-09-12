@@ -86,8 +86,31 @@ VITE_SUPABASE_ANON_KEY
 
 Depois faça um novo deploy.
 
-## 6. Estado atual do app
+## 6. Autenticação
 
-O login já usa Supabase quando as variáveis existem.
+O app já usa Supabase Auth quando as variáveis existem.
+
+Funcionalidades prontas:
+
+- Entrar com e-mail e senha.
+- Criar conta com nome, e-mail e senha.
+- Manter sessão ativa.
+- Proteger telas internas.
+- Sair da conta pelo Perfil.
+
+Sobre confirmação de e-mail:
+
+- Se a confirmação estiver ligada no Supabase, o usuário verá a mensagem para confirmar o e-mail antes de entrar.
+- Se a confirmação estiver desligada, o cadastro leva diretamente para o app.
+
+Para ajustar:
+
+```text
+Authentication > Providers > Email
+```
+
+Configure conforme o piloto comercial.
+
+## 7. Estado atual do app
 
 Sem variáveis, o app continua em modo demo para não quebrar o protótipo.

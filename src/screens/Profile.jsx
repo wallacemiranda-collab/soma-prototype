@@ -9,26 +9,43 @@ import {
   Target,
   Trophy,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import MetabolicCard from '../components/MetabolicCard'
 import { SectionTitle } from '../components/ui'
 import { brand } from '../config/brand'
+import { useAuth } from '../contexts/AuthContext'
 import { achievements, profileOptions, user } from '../data/mockData'
 
 const icons = { Bell, BookOpen, CircleHelp, ShieldCheck, Target, Trophy, Flame }
 
 export default function Profile() {
+  const navigate = useNavigate()
+  const { signOut, user: authUser } = useAuth()
+  const displayName = authUser?.user_metadata?.full_name ?? 'Marina Alves'
+  const displayEmail = authUser?.email ?? brand.demoUser.email
+  const initials = displayName
+    .split(' ')
+    .map((name) => name[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <>
       <AppHeader title="Perfil" simple />
 
       <section className="flex flex-col items-center">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-soma-800 text-2xl font-semibold text-white">
-          {user.avatar}
+          {initials || user.avatar}
         </div>
-        <h2 className="mt-4 text-xl font-semibold">Marina Alves</h2>
-        <p className="text-sm text-soma-500">{brand.demoUser.email}</p>
+        <h2 className="mt-4 text-xl font-semibold">{displayName}</h2>
+        <p className="text-sm text-soma-500">{displayEmail}</p>
         <span className="mt-3 rounded-full bg-soma-100 px-4 py-1.5 text-xs font-semibold text-soma-700">
           {user.level}
         </span>
@@ -66,13 +83,13 @@ export default function Profile() {
         })}
       </MetabolicCard>
 
-      <Link
-        to="/login"
+      <button
+        onClick={handleSignOut}
         className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-rose"
       >
         <LogOut className="h-5 w-5" />
         Sair da conta
-      </Link>
+      </button>
     </>
   )
 }

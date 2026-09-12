@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import MobileShell from './components/MobileShell'
+import ProtectedRoute from './components/ProtectedRoute'
 import ScrollToTop from './components/ScrollToTop'
 import { brand } from './config/brand'
+import { AuthProvider } from './contexts/AuthContext'
 import Education from './screens/Education'
 import Evolution from './screens/Evolution'
 import Habits from './screens/Habits'
@@ -19,22 +21,24 @@ export default function App() {
   }, [])
 
   return (
-    <>
+    <AuthProvider>
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/splash" element={<Splash />} />
         <Route path="/planos" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
-        <Route element={<MobileShell />}>
-          <Route path="/home" element={<Home />} />
-          <Route path="/evolucao" element={<Evolution />} />
-          <Route path="/habitos" element={<Habits />} />
-          <Route path="/educacao" element={<Education />} />
-          <Route path="/perfil" element={<Profile />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MobileShell />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/evolucao" element={<Evolution />} />
+            <Route path="/habitos" element={<Habits />} />
+            <Route path="/educacao" element={<Education />} />
+            <Route path="/perfil" element={<Profile />} />
+          </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </AuthProvider>
   )
 }

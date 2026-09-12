@@ -2,25 +2,28 @@
 
 Protótipo navegável mobile-first da SOMA, plataforma de medicina metabólica longitudinal, criado com React, Vite, Tailwind CSS, Framer Motion e base preparada para Supabase.
 
-O app ainda funciona em modo demo quando as variáveis do Supabase não estão configuradas. Ao adicionar as credenciais, o login passa a usar Supabase Auth.
+O app funciona em modo demo quando as variáveis do Supabase não estão configuradas. Ao adicionar as credenciais, login, cadastro, sessão persistente, rotas protegidas e logout passam a usar Supabase Auth.
 
 ## Telas e fluxo
 
-- `Splash` apresenta a marca e direciona para o login.
-- `Login` aceita os dados demonstrativos e leva para a Home.
+- `/` apresenta a landing comercial pública.
+- `/planos` apresenta a oferta inicial de planos.
+- `Splash` segue disponível em `/splash`.
+- `Login` permite entrar ou criar conta.
 - `Home` conecta evolução metabólica, hábitos e um insight clínico discreto.
 - `Evolução` exibe tendência longitudinal, indicadores de cuidado e timeline.
 - `Hábitos` acompanha sono, alimentação, movimento e saúde emocional.
 - `Educação` filtra vídeos e artigos metabólicos confiáveis.
 - `Perfil` reúne objetivos metabólicos, preferências e saída da conta.
 
-Após o login, uma bottom navigation fixa conecta os cinco destinos principais.
+Após o login, uma bottom navigation fixa conecta os cinco destinos principais. As telas internas são protegidas e redirecionam para `/login` quando não há sessão ativa.
 
 ## Componentes-chave
 
 - `MetabolicCard`, `HabitRing`, `AIInsightCard` e `EvolutionGraph`.
 - Paleta premium com Deep Medical Teal, Midnight Navy e Soft Clinical White.
 - Transições discretas entre telas, voltadas a uma experiência calma e respirável.
+- Configuração de marca centralizada em `src/config/brand.js`.
 
 ## Executar
 
@@ -66,6 +69,11 @@ Project Settings > Environment Variables
 
 6. Faça um novo deploy.
 
+Para cadastro aberto, confira em Supabase Auth se a confirmação de e-mail está alinhada com sua estratégia:
+
+- Confirmação ligada: o usuário cria conta e precisa confirmar o e-mail antes de entrar.
+- Confirmação desligada: o usuário entra logo após criar conta.
+
 Tabelas iniciais:
 
 - `profiles`
@@ -79,6 +87,8 @@ Todas já vêm com RLS habilitado e políticas para o usuário acessar apenas os
 ```text
 src/
   components/  Componentes de interface e navegação
+  config/      Configuração de marca provisória
+  contexts/    Estado global de autenticação
   data/        Conteúdo demonstrativo
   screens/     Splash, Login, Home, Evolution, Habits, Education e Profile
   App.jsx      Rotas da aplicação

@@ -1,4 +1,4 @@
-import { Bookmark, BookOpen, Clock3, PlayCircle, Search } from 'lucide-react'
+import { Bookmark, BookOpen, Clock3, ExternalLink, PlayCircle, Search, Youtube } from 'lucide-react'
 import { useState } from 'react'
 import AppHeader from '../components/AppHeader'
 import MetabolicCard from '../components/MetabolicCard'
@@ -6,6 +6,7 @@ import { courses } from '../data/mockData'
 import { Pill, ProgressBar } from '../components/ui'
 
 const categories = ['Tudo', 'Metabolismo', 'Sono', 'Nutrição']
+const youtubeChannelUrl = 'https://www.youtube.com/@WallaceMiranda'
 
 export default function Education() {
   const [selected, setSelected] = useState('Tudo')
@@ -47,6 +48,32 @@ export default function Education() {
             <PlayCircle className="h-5 w-5" />
             Começar trilha
           </button>
+        </div>
+      </MetabolicCard>
+
+      <MetabolicCard className="mt-4 !bg-[#fff7f5]">
+        <div className="flex gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-rose">
+            <Youtube className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose">
+              Canal recomendado
+            </p>
+            <h2 className="mt-1 font-semibold text-soma-900">Wallace Miranda no YouTube</h2>
+            <p className="mt-1 text-sm leading-5 text-soma-600">
+              Conteúdos complementares sobre saúde metabólica, hábitos e prevenção.
+            </p>
+            <a
+              href={youtubeChannelUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-soma-800 px-4 py-2.5 text-sm font-semibold text-white"
+            >
+              Acessar canal
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </MetabolicCard>
 

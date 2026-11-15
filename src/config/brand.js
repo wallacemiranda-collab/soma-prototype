@@ -1,12 +1,14 @@
+const name = 'Endo +'
+
 export const brand = {
-  name: 'SOMA',
-  initial: 'S',
+  name,
+  initial: name[0],
   tagline: 'Medicina metabólica contínua.',
   longTagline: 'Medicina metabólica longitudinal',
   promise: 'Integrar para transformar vidas',
-  siteTitle: 'SOMA | Seu bem-estar em movimento',
+  siteTitle: `${name} | Seu bem-estar em movimento`,
   commercialCategory: 'Saúde metabólica como serviço',
-  supportLabel: 'Fale com a SOMA',
+  supportLabel: `Fale com ${name}`,
   demoUser: {
     email: 'marina@soma.app',
     password: 'soma1234',

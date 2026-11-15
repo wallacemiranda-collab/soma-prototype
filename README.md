@@ -1,6 +1,6 @@
-# SOMA Mobile Prototype
+# Endo + Mobile Prototype
 
-Protótipo navegável mobile-first da SOMA, plataforma de medicina metabólica longitudinal, criado com React, Vite, Tailwind CSS, Framer Motion e base preparada para Supabase.
+Protótipo navegável mobile-first do Endo +, plataforma de medicina metabólica longitudinal, criado com React, Vite, Tailwind CSS, Framer Motion e base preparada para Supabase.
 
 O app funciona em modo demo quando as variáveis do Supabase não estão configuradas. Ao adicionar as credenciais, login, cadastro, login com Google, sessão persistente, rotas protegidas e logout passam a usar Supabase Auth.
 

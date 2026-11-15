@@ -33,7 +33,7 @@ export default function Login() {
     setIsSubmitting(false)
 
     if (result.needsEmailConfirmation) {
-      setErrorMessage('Conta criada. Confirme seu e-mail para entrar no SOMA.')
+      setErrorMessage(`Conta criada. Confirme seu e-mail para entrar no ${brand.name}.`)
       return
     }
 

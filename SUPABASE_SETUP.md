@@ -1,6 +1,6 @@
-# SOMA Supabase Setup
+# Endo + Supabase Setup
 
-Use este checklist para ligar o protótipo SOMA a dados reais.
+Use este checklist para ligar o protótipo Endo + a dados reais.
 
 ## 1. Criar projeto
 

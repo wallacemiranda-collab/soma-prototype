@@ -21,8 +21,4 @@ export const brand = {
     name: 'Clínica Endócrinos',
     url: 'https://www.clinicaendocrinos.com.br/',
   },
-  demoUser: {
-    email: 'marina@soma.app',
-    password: 'soma1234',
-  },
 }

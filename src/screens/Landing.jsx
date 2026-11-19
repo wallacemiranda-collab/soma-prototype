@@ -1,4 +1,11 @@
-import { ArrowRight, CheckCircle2, HeartPulse, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react'
+import {
+  ArrowRight,
+  CheckCircle2,
+  HeartPulse,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import { brand } from '../config/brand'
@@ -7,21 +14,24 @@ const benefits = [
   {
     icon: HeartPulse,
     title: 'Acompanhamento contínuo',
-    description: 'Peso, sono, atividade e hábitos em uma jornada simples de acompanhar.',
+    description:
+      'Peso, sono, atividade e hábitos em uma jornada simples de acompanhar.',
   },
   {
     icon: Sparkles,
-    title: 'Insights personalizados',
-    description: 'Leituras claras sobre consistência, evolução e próximos passos.',
+    title: 'Seu diário de saúde',
+    description:
+      'Registre medidas e hábitos, com um histórico organizado por dia.',
   },
   {
     icon: TrendingUp,
     title: 'Evolução visível',
-    description: 'Linha do tempo metabólica para mostrar progresso sem depender só da balança.',
+    description:
+      'Linha do tempo metabólica para mostrar progresso sem depender só da balança.',
   },
 ]
 
-const proofPoints = ['Protótipo navegável', 'Dados simulados', 'Pronto para pilotos comerciais']
+const proofPoints = ['Seu histórico', 'Sua rotina', 'Mais aprendizado']
 
 export default function Landing() {
   return (
@@ -49,8 +59,9 @@ export default function Landing() {
               O cuidado metabólico que continua entre consultas.
             </h1>
             <p className="mt-5 text-base leading-7 text-soma-100">
-              {brand.name} ajuda pacientes e profissionais a transformar dados, hábitos e educação em uma
-              jornada contínua, humana e motivadora.
+              O {brand.name} ajuda você a registrar hábitos e medidas, rever sua
+              evolução e aprender mais sobre saúde em uma jornada contínua e
+              humana.
             </p>
 
             <div className="mt-8 grid grid-cols-2 gap-3">
@@ -65,7 +76,7 @@ export default function Landing() {
                 to="/planos"
                 className="flex items-center justify-center rounded-2xl border border-white/20 px-5 py-4 font-semibold text-white"
               >
-                Ver planos
+                Conhecer o piloto
               </Link>
             </div>
           </div>
@@ -74,31 +85,44 @@ export default function Landing() {
         <section className="px-6 py-7">
           <div className="grid grid-cols-3 gap-3">
             {proofPoints.map((item) => (
-              <div key={item} className="rounded-2xl bg-white p-3 text-center shadow-card">
+              <div
+                key={item}
+                className="rounded-2xl bg-white p-3 text-center shadow-card"
+              >
                 <CheckCircle2 className="mx-auto h-5 w-5 text-soma-500" />
-                <p className="mt-2 text-xs font-semibold leading-4 text-soma-700">{item}</p>
+                <p className="mt-2 text-xs font-semibold leading-4 text-soma-700">
+                  {item}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
         <section className="px-6 pb-8">
-          <h2 className="text-2xl font-semibold tracking-tight">Por que agora?</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Cuidado que cabe na rotina
+          </h2>
           <p className="mt-3 text-sm leading-6 text-soma-600">
-            O mercado precisa de cuidado preventivo, recorrente e mensurável. {brand.name} nasce para
-            conectar comportamento, dados e orientação em uma experiência pronta para pilotos.
+            O {brand.name} reúne suas anotações em um só lugar para que você
+            possa acompanhar a rotina e conversar sobre sua evolução com o
+            profissional que cuida de você.
           </p>
 
           <div className="mt-6 space-y-4">
             {benefits.map(({ icon: Icon, title, description }) => (
-              <article key={title} className="rounded-[1.5rem] bg-white p-5 shadow-card">
+              <article
+                key={title}
+                className="rounded-[1.5rem] bg-white p-5 shadow-card"
+              >
                 <div className="flex gap-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-soma-100 text-soma-700">
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-soma-900">{title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-soma-600">{description}</p>
+                    <p className="mt-1 text-sm leading-6 text-soma-600">
+                      {description}
+                    </p>
                   </div>
                 </div>
               </article>
@@ -113,15 +137,19 @@ export default function Landing() {
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="font-semibold text-soma-900">Próximo passo comercial</h2>
-                <p className="text-sm text-soma-600">Validar pilotos, planos e onboarding.</p>
+                <h2 className="font-semibold text-soma-900">
+                  Comece a conhecer o Endo +
+                </h2>
+                <p className="text-sm text-soma-600">
+                  Veja como funciona o piloto para pacientes.
+                </p>
               </div>
             </div>
             <Link
               to="/planos"
               className="mt-5 flex w-full items-center justify-center rounded-2xl bg-soma-800 px-5 py-4 font-semibold text-white"
             >
-              Estruturar oferta
+              Conhecer o piloto
             </Link>
           </div>
         </section>

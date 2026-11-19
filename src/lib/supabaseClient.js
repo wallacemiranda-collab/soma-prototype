@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
+import { readBackendConfig } from './backendConfig.js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const env = import.meta.env ?? {}
+const { url, key, configured } = readBackendConfig(env)
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+export const isSupabaseConfigured = configured
+export const isGoogleAuthEnabled =
+  isSupabaseConfigured && env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null
+export const supabase = isSupabaseConfigured ? createClient(url, key) : null

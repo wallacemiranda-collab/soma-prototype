@@ -1,111 +1,105 @@
-import { Bookmark, BookOpen, Clock3, ExternalLink, PlayCircle, Search, Youtube } from 'lucide-react'
+import { ExternalLink, Search, Youtube } from 'lucide-react'
 import { useState } from 'react'
 import AppHeader from '../components/AppHeader'
 import MetabolicCard from '../components/MetabolicCard'
-import { courses } from '../data/mockData'
-import { Pill, ProgressBar } from '../components/ui'
 
-const categories = ['Tudo', 'Metabolismo', 'Sono', 'Nutrição']
-const youtubeChannelUrl = 'https://www.youtube.com/@WallaceMiranda'
+const channel = 'https://www.youtube.com/@WallaceMiranda'
+const topics = [
+  {
+    title: 'Sono e descanso',
+    query: 'sono',
+    description: 'Explore os conteúdos sobre sono no canal.',
+  },
+  {
+    title: 'Alimentação',
+    query: 'alimentação',
+    description: 'Encontre conversas sobre alimentação e rotina.',
+  },
+  {
+    title: 'Metabolismo e diabetes',
+    query: 'diabetes',
+    description:
+      'Conheça os temas de endocrinologia abordados pelo Dr. Wallace.',
+  },
+]
 
 export default function Education() {
-  const [selected, setSelected] = useState('Tudo')
-  const visibleCourses =
-    selected === 'Tudo' ? courses : courses.filter((course) => course.category === selected)
-
+  const [query, setQuery] = useState('')
+  const visible = topics.filter((topic) =>
+    topic.title
+      .toLocaleLowerCase('pt-BR')
+      .includes(query.trim().toLocaleLowerCase('pt-BR')),
+  )
   return (
     <>
-      <AppHeader title="Educação" subtitle="Conteúdo metabólico confiável" simple />
-
-      <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-card">
-        <Search className="h-5 w-5 text-soma-400" />
+      <AppHeader
+        title="Educação"
+        subtitle="Aprenda com o Dr. Wallace Miranda"
+        simple
+      />
+      <label className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-card">
+        <Search size={20} className="text-soma-500" />
         <input
-          placeholder="Buscar conteúdos"
-          className="w-full bg-transparent text-sm text-soma-900 outline-none placeholder:text-soma-400"
+          aria-label="Buscar assuntos"
+          placeholder="Buscar assuntos"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="min-w-0 flex-1 bg-transparent text-sm outline-none"
         />
       </label>
-
-      <div className="hide-scrollbar -mx-5 mt-5 flex gap-2 overflow-x-auto px-5">
-        {categories.map((category) => (
-          <button
-            key={category}
-            onClick={() => setSelected(category)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${
-              selected === category ? 'bg-soma-800 text-white' : 'bg-white text-soma-600'
-            }`}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
-
-      <MetabolicCard className="mt-6 overflow-hidden !p-0" emphasis>
-        <div className="p-5">
-          <Pill tone="yellow">Trilha em destaque</Pill>
-          <h2 className="mt-4 text-xl font-semibold">Compreenda seu metabolismo</h2>
-          <p className="mt-2 text-sm text-soma-200">Ciência acessível para decisões sustentáveis.</p>
-          <button className="mt-5 flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-soma-800">
-            <PlayCircle className="h-5 w-5" />
-            Começar trilha
-          </button>
-        </div>
+      <MetabolicCard emphasis className="mt-5">
+        <Youtube size={32} className="text-soma-200" />
+        <h2 className="mt-4 text-xl font-semibold">
+          Wallace Miranda no YouTube
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-soma-100">
+          Vídeos e entrevistas para ampliar suas conversas sobre saúde. Os
+          conteúdos não substituem uma avaliação individual.
+        </p>
+        <a
+          href={channel}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-soma-800"
+        >
+          Acessar canal
+          <ExternalLink size={16} />
+        </a>
       </MetabolicCard>
-
-      <MetabolicCard className="mt-4 !bg-soma-50">
-        <div className="flex gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-soma-500">
-            <Youtube className="h-6 w-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-soma-600">
-              Canal recomendado
-            </p>
-            <h2 className="mt-1 font-semibold text-soma-900">Wallace Miranda no YouTube</h2>
-            <p className="mt-1 text-sm leading-5 text-soma-600">
-              Conteúdos complementares sobre saúde metabólica, hábitos e prevenção.
-            </p>
-            <a
-              href={youtubeChannelUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-soma-800 px-4 py-2.5 text-sm font-semibold text-white"
-            >
-              Acessar canal
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </div>
-        </div>
-      </MetabolicCard>
-
-      <div className="mb-4 mt-7 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Suas aulas</h2>
-        <button className="text-sm font-semibold text-soma-600">Salvos</button>
-      </div>
+      <h2 className="mb-4 mt-7 text-lg font-semibold">Explorar assuntos</h2>
       <div className="space-y-3">
-        {visibleCourses.map((course, index) => (
-          <MetabolicCard key={course.title} className="flex gap-3 !p-4">
-            <div
-              className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${
-                index % 2 === 0 ? 'bg-soma-100 text-soma-700' : 'bg-soma-50 text-soma-500'
-              }`}
+        {visible.map((topic) => (
+          <MetabolicCard key={topic.query}>
+            <h3 className="font-semibold">{topic.title}</h3>
+            <p className="mt-2 text-sm text-soma-600">{topic.description}</p>
+            <a
+              href={`${channel}/search?query=${encodeURIComponent(topic.query)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-soma-600"
             >
-              <BookOpen className="h-7 w-7" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex justify-between">
-                <p className="text-xs font-semibold text-soma-500">{course.type} · {course.category}</p>
-                <Bookmark className="h-4 w-4 text-soma-400" />
-              </div>
-              <h3 className="truncate font-semibold">{course.title}</h3>
-              <div className="mt-2 flex items-center gap-2 text-xs text-soma-500">
-                <Clock3 className="h-3.5 w-3.5" />
-                {course.minutes} min · {course.lessons} aulas
-              </div>
-              {course.progress > 0 && <ProgressBar value={course.progress} className="mt-2 h-1.5" />}
-            </div>
+              Explorar no YouTube
+              <ExternalLink size={15} />
+            </a>
           </MetabolicCard>
         ))}
       </div>
+      {!visible.length && (
+        <MetabolicCard>
+          <p className="text-sm text-soma-600">
+            Não encontramos esse assunto na lista. Você pode buscar diretamente
+            no canal.
+          </p>
+          <a
+            href={`${channel}/search?query=${encodeURIComponent(query.trim())}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-block font-semibold text-soma-600"
+          >
+            Buscar no canal
+          </a>
+        </MetabolicCard>
+      )}
     </>
   )
 }

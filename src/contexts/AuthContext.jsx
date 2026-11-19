@@ -1,10 +1,10 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import {
   getCurrentSession,
   onAuthStateChange,
   signInWithEmail,
   signInWithGoogle,
-  signOut as signOutService,
+  signOut as endSession,
   signUpWithEmail,
 } from '../services/authService'
 
@@ -13,105 +13,96 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isDemo, setIsDemo] = useState(false)
 
   useEffect(() => {
-    let isMounted = true
-
-    async function loadSession() {
-      const { session: currentSession } = await getCurrentSession()
-
-      if (isMounted) {
-        setSession(currentSession)
+    let active = true
+    let eventReceived = false
+    const subscription = onAuthStateChange((nextSession) => {
+      eventReceived = true
+      if (active) {
+        setSession(nextSession)
+        setIsDemo(false)
         setIsLoading(false)
       }
-    }
-
-    loadSession()
-
-    const subscription = onAuthStateChange((nextSession) => {
-      setSession(nextSession)
-      setIsLoading(false)
     })
-
+    getCurrentSession()
+      .then(({ session: current }) => {
+        if (active && !eventReceived) setSession(current)
+      })
+      .catch(() => {
+        if (active && !eventReceived) setSession(null)
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
     return () => {
-      isMounted = false
+      active = false
       subscription.unsubscribe()
     }
   }, [])
 
   async function signIn(email, password) {
     const result = await signInWithEmail(email, password)
-
-    if (!result.error) {
-      setSession(result.data.session ?? { user: result.data.user })
+    if (!result.error && result.data?.session) {
+      setIsDemo(false)
+      setSession(result.data.session)
     }
-
     return result
   }
 
   async function signUp(email, password, fullName) {
     const result = await signUpWithEmail(email, password, fullName)
-
-    if (result.error) {
-      return result
-    }
-
-    if (result.mode === 'demo') {
-      setSession({ user: result.data.user })
-      return result
-    }
-
-    if (result.data.session) {
+    if (result.error) return result
+    if (result.data?.session) {
+      setIsDemo(false)
       setSession(result.data.session)
-      return result
     }
-
-    return { ...result, needsEmailConfirmation: true }
-  }
-
-  async function signInGoogle() {
-    const result = await signInWithGoogle()
-
-    if (!result.error && result.mode === 'demo') {
-      setSession({ user: result.data.user })
-    }
-
-    return result
+    return { ...result, needsEmailConfirmation: !result.data?.session }
   }
 
   async function signOut() {
-    const result = await signOutService()
-
+    const result = isDemo ? { error: null } : await endSession()
     if (!result.error) {
       setSession(null)
+      setIsDemo(false)
     }
-
     return result
   }
 
-  const value = useMemo(
-    () => ({
-      isAuthenticated: Boolean(session?.user),
-      isLoading,
-      session,
-      user: session?.user ?? null,
-      signIn,
-      signInGoogle,
-      signOut,
-      signUp,
-    }),
-    [isLoading, session],
-  )
+  function startDemo() {
+    setIsDemo(true)
+    setSession({
+      user: {
+        id: 'demo-user',
+        email: 'demo@exemplo.invalid',
+        user_metadata: { full_name: 'Paciente demonstração' },
+      },
+    })
+  }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        session,
+        user: session?.user ?? null,
+        isAuthenticated: Boolean(session?.user),
+        isLoading,
+        isDemo,
+        signIn,
+        signUp,
+        signOut,
+        startDemo,
+        signInGoogle: signInWithGoogle,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
-
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
-  }
-
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context
 }

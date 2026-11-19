@@ -1,102 +1,114 @@
-import { Activity, Flame, MoonStar, Play } from 'lucide-react'
+import { ArrowRight, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import AIInsightCard from '../components/AIInsightCard'
+import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import AIInsightCard from '../components/AIInsightCard'
 import HabitItem from '../components/HabitItem'
 import MetabolicCard from '../components/MetabolicCard'
-import { todayHabits, user } from '../data/mockData'
-import { ProgressBar, SectionTitle } from '../components/ui'
+import { Feedback, SectionTitle } from '../components/ui'
+import { usePatient } from '../contexts/PatientContext'
+import {
+  formatDate,
+  formatNumber,
+  habitsForDate,
+  localDate,
+} from '../lib/patientData'
 
 export default function Home() {
-  const navigate = useNavigate()
-  const [habits, setHabits] = useState(todayHabits)
+  const { entries, habitLogs, saveHabit } = usePatient()
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+  const today = localDate()
+  const habits = habitsForDate(habitLogs, today)
+  const weight = entries.find((entry) => entry.weight_kg != null)
+  const waist = entries.find((entry) => entry.waist_cm != null)
   const completed = habits.filter((habit) => habit.done).length
-
-  function toggleHabit(id) {
-    setHabits((current) =>
-      current.map((habit) => (habit.id === id ? { ...habit, done: !habit.done } : habit)),
-    )
+  async function toggle(id) {
+    if (pending) return
+    setPending(true)
+    setError('')
+    try {
+      await saveHabit(today, id, !habits.find((habit) => habit.id === id).done)
+    } catch {
+      setError('Não foi possível salvar o hábito. Tente novamente.')
+    } finally {
+      setPending(false)
+    }
   }
-
   return (
     <>
-      <AppHeader />
+      <AppHeader subtitle="Seu cuidado, um dia de cada vez" />
       <MetabolicCard emphasis>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-sm text-soma-200">
-              <Flame className="h-4 w-4 text-soma-200" />
-              {user.streak} dias de cuidado contínuo
-            </div>
-            <h2 className="mt-4 text-2xl font-semibold">Jornada metabólica</h2>
-          </div>
-          <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold">
-            {user.level}
-          </span>
-        </div>
-        <div className="mt-6 flex items-end justify-between text-sm">
-          <span>Meta de 12 semanas</span>
-          <span className="text-soma-200">{user.progress}% acompanhada</span>
-        </div>
-        <ProgressBar value={user.progress} className="mt-3 bg-white/15" barClassName="bg-soma-200" />
+        <p className="text-sm text-soma-100">Seu diário de saúde</p>
+        <h2 className="mt-3 text-2xl font-semibold">Como foi seu dia?</h2>
+        <p className="mt-3 text-sm leading-6 text-soma-100">
+          Registre o que faz sentido para você. Cada anotação ajuda a acompanhar
+          sua rotina.
+        </p>
+        <Link
+          to="/registro"
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-soma-800"
+        >
+          <Plus size={18} />
+          Registrar medidas
+        </Link>
       </MetabolicCard>
-
-      <div className="mt-4">
-        <AIInsightCard>
-          Seu sono esteve mais regular esta semana. Manter o horário pode apoiar sua disposição hoje.
-        </AIInsightCard>
-      </div>
-
-      <div className="mt-7">
-        <SectionTitle
-          title="Hábitos de hoje"
-          action="Ver todos"
-          onClick={() => navigate('/habitos')}
-        />
-        <MetabolicCard className="space-y-1 !py-3">
-          {habits.slice(0, 3).map((habit) => (
-            <HabitItem key={habit.id} habit={habit} compact onToggle={toggleHabit} />
+      <section className="mt-5 grid grid-cols-2 gap-3">
+        <MetabolicCard>
+          <p className="text-sm text-soma-600">Último peso</p>
+          <p className="mt-2 text-xl font-semibold">
+            {formatNumber(weight?.weight_kg, ' kg')}
+          </p>
+          {weight && (
+            <p className="mt-2 text-xs text-soma-600">
+              {formatDate(weight.entry_date)}
+            </p>
+          )}
+        </MetabolicCard>
+        <MetabolicCard>
+          <p className="text-sm text-soma-600">Última cintura</p>
+          <p className="mt-2 text-xl font-semibold">
+            {formatNumber(waist?.waist_cm, ' cm')}
+          </p>
+          {waist && (
+            <p className="mt-2 text-xs text-soma-600">
+              {formatDate(waist.entry_date)}
+            </p>
+          )}
+        </MetabolicCard>
+      </section>
+      <section className="mt-7">
+        <SectionTitle title="Hábitos de hoje" />
+        <Feedback error={error} />
+        <MetabolicCard className="mt-3 space-y-1 !py-3">
+          {habits.map((habit) => (
+            <HabitItem
+              key={habit.id}
+              habit={habit}
+              compact
+              onToggle={toggle}
+              disabled={pending}
+            />
           ))}
-          <p className="pt-2 text-center text-xs text-soma-500">
-            {completed} de {habits.length} hábitos concluídos hoje
+          <p className="pt-3 text-xs text-soma-600">
+            {completed} de {habits.length} hábitos marcados
           </p>
         </MetabolicCard>
+      </section>
+      <div className="mt-5">
+        <AIInsightCard>
+          {entries.length
+            ? `Você tem registros em ${entries.length} dia(s). Consulte sua evolução para rever suas anotações.`
+            : 'Sua jornada começa com o primeiro registro. Não é preciso preencher tudo de uma vez.'}
+        </AIInsightCard>
       </div>
-
-      <div className="mt-7">
-        <SectionTitle title="Recomendado para você" />
-        <MetabolicCard className="flex items-center gap-4 !bg-soma-50">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-soma-700">
-            <Activity className="h-7 w-7" />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold text-soma-600">METABOLISMO</p>
-            <h3 className="mt-1 font-semibold text-soma-900">Movimento após refeições</h3>
-            <p className="text-xs text-soma-600">Vídeo · 8 min</p>
-          </div>
-          <button
-            aria-label="Reproduzir aula"
-            onClick={() => navigate('/educacao')}
-            className="rounded-full bg-soma-800 p-3 text-white"
-          >
-            <Play className="h-4 w-4 fill-white" />
-          </button>
-        </MetabolicCard>
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <MetabolicCard className="!p-4">
-          <MoonStar className="mb-3 h-5 w-5 text-soma-500" />
-          <p className="text-xs text-soma-600">Sono médio</p>
-          <p className="mt-1 text-xl font-semibold">7h 34</p>
-        </MetabolicCard>
-        <MetabolicCard className="!p-4">
-          <Activity className="mb-3 h-5 w-5 text-soma-500" />
-          <p className="text-xs text-soma-600">Movimento</p>
-          <p className="mt-1 text-xl font-semibold">64%</p>
-        </MetabolicCard>
-      </div>
+      <Link
+        to="/evolucao"
+        className="mt-5 flex items-center justify-between rounded-2xl bg-white p-5 font-semibold text-soma-700"
+      >
+        Ver meu histórico
+        <ArrowRight size={18} />
+      </Link>
     </>
   )
 }

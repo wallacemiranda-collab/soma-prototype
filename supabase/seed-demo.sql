@@ -3,6 +3,8 @@
 -- 2. Replace the email below with that user's email.
 -- 3. Run this file in the Supabase SQL Editor.
 
+-- Legacy development seed. Do not use for the patient pilot.
+-- The app's explicit demonstration now uses isolated, in-memory fixtures.
 do $$
 declare
   demo_user_id uuid;

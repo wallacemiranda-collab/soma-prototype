@@ -2,11 +2,11 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  full_name text,
+  full_name text check (char_length(full_name) between 1 and 100),
   email text,
-  goal_weight numeric,
-  weekly_exercise_goal integer default 150,
-  sleep_goal_hours numeric default 7,
+  goal_weight numeric check (goal_weight between 0.1 and 800),
+  weekly_exercise_goal integer check (weekly_exercise_goal between 0 and 10080),
+  sleep_goal_hours numeric check (sleep_goal_hours between 0 and 24),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -15,11 +15,11 @@ create table if not exists public.metabolic_entries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   entry_date date not null default current_date,
-  weight_kg numeric,
-  waist_cm numeric,
-  sleep_minutes integer,
-  activity_minutes integer,
-  water_liters numeric,
+  weight_kg numeric check (weight_kg between 0.1 and 800),
+  waist_cm numeric check (waist_cm between 1 and 500),
+  sleep_minutes integer check (sleep_minutes between 0 and 1440),
+  activity_minutes integer check (activity_minutes between 0 and 1440),
+  water_liters numeric check (water_liters between 0 and 30),
   mood_score integer check (mood_score between 1 and 10),
   nutrition_adherence integer check (nutrition_adherence between 0 and 100),
   created_at timestamptz default now(),
@@ -48,6 +48,7 @@ create index if not exists habit_logs_user_date_idx
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   new.updated_at = now();
@@ -74,13 +75,13 @@ create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   insert into public.profiles (id, full_name, email)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.email),
+    left(coalesce(nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''), split_part(new.email, '@', 1), 'Paciente'), 100),
     new.email
   )
   on conflict (id) do update
@@ -147,3 +148,9 @@ create policy "Users can update own habit logs"
   on public.habit_logs for update
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+grant usage on schema public to authenticated;
+grant select, insert, update on public.profiles, public.metabolic_entries, public.habit_logs to authenticated;
+revoke all on public.profiles, public.metabolic_entries, public.habit_logs from anon;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.set_updated_at() from public, anon, authenticated;

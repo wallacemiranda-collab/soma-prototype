@@ -1,94 +1,162 @@
-import {
-  Bell,
-  BookOpen,
-  ChevronRight,
-  CircleHelp,
-  Flame,
-  LogOut,
-  ShieldCheck,
-  Target,
-  Trophy,
-} from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import MetabolicCard from '../components/MetabolicCard'
-import { SectionTitle } from '../components/ui'
-import { brand } from '../config/brand'
+import { Feedback, FormField, PrimaryButton } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
-import { achievements, profileOptions, user } from '../data/mockData'
-
-const icons = { Bell, BookOpen, CircleHelp, ShieldCheck, Target, Trophy, Flame }
+import { usePatient } from '../contexts/PatientContext'
+import { brand } from '../config/brand'
+import { initials } from '../lib/patientData'
 
 export default function Profile() {
+  const { user, isDemo, signOut } = useAuth()
+  const { profile, fullName, saveProfile } = usePatient()
   const navigate = useNavigate()
-  const { signOut, user: authUser } = useAuth()
-  const displayName = authUser?.user_metadata?.full_name ?? 'Marina Alves'
-  const displayEmail = authUser?.email ?? brand.demoUser.email
-  const initials = displayName
-    .split(' ')
-    .map((name) => name[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
-  async function handleSignOut() {
-    await signOut()
-    navigate('/login', { replace: true })
+  const [values, setValues] = useState({})
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  useEffect(() => {
+    setValues({
+      full_name: fullName,
+      goal_weight: profile?.goal_weight ?? '',
+      weekly_exercise_goal: profile?.weekly_exercise_goal ?? '',
+      sleep_goal_hours: profile?.sleep_goal_hours ?? '',
+    })
+  }, [profile, fullName])
+  async function submit(event) {
+    event.preventDefault()
+    if (pending || isDemo) return
+    setPending(true)
+    setError('')
+    setMessage('')
+    try {
+      await saveProfile(values)
+      setMessage('Perfil atualizado.')
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : 'Não foi possível atualizar o perfil. Tente novamente.',
+      )
+    } finally {
+      setPending(false)
+    }
   }
-
+  async function leave() {
+    if (pending) return
+    setPending(true)
+    setError('')
+    try {
+      const result = await signOut()
+      if (result.error) throw result.error
+      navigate('/login', { replace: true })
+    } catch {
+      setError('Não foi possível sair. Tente novamente.')
+      setPending(false)
+    }
+  }
   return (
     <>
-      <AppHeader title="Perfil" simple />
-
-      <section className="flex flex-col items-center">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-soma-800 text-2xl font-semibold text-white">
-          {initials || user.avatar}
+      <AppHeader title="Meu perfil" simple />
+      <section className="mb-6 flex items-center gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-soma-800 text-xl font-semibold text-white">
+          {initials(fullName)}
         </div>
-        <h2 className="mt-4 text-xl font-semibold">{displayName}</h2>
-        <p className="text-sm text-soma-500">{displayEmail}</p>
-        <span className="mt-3 rounded-full bg-soma-100 px-4 py-1.5 text-xs font-semibold text-soma-700">
-          {user.level}
-        </span>
+        <div className="min-w-0">
+          <h2 className="break-words text-xl font-semibold">{fullName}</h2>
+          <p className="break-all text-sm text-soma-600">
+            {isDemo ? 'Conta de demonstração' : user.email}
+          </p>
+        </div>
       </section>
-
-      <div className="mt-7">
-        <SectionTitle title="Conquistas" />
-        <div className="hide-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pb-2">
-          {achievements.map(({ title, description, icon }) => {
-            const Icon = icons[icon]
-            return (
-              <MetabolicCard key={title} className="w-36 shrink-0 !p-4">
-                <Icon className="h-6 w-6 text-soma-500" />
-                <h3 className="mt-3 text-sm font-semibold">{title}</h3>
-                <p className="mt-1 text-xs text-soma-500">{description}</p>
-              </MetabolicCard>
-            )
-          })}
-        </div>
-      </div>
-
-      <MetabolicCard className="mt-6 space-y-1 !px-4 !py-2">
-        {profileOptions.map(({ label, detail, icon }) => {
-          const Icon = icons[icon]
-          return (
-            <button key={label} className="flex w-full items-center gap-3 border-b border-soma-50 py-3.5 text-left last:border-0">
-              <Icon className="h-5 w-5 text-soma-600" />
-              <span className="flex-1">
-                <span className="block text-sm font-medium">{label}</span>
-                <span className="block text-xs text-soma-500">{detail}</span>
-              </span>
-              <ChevronRight className="h-4 w-4 text-soma-300" />
-            </button>
-          )
-        })}
+      <MetabolicCard>
+        <h2 className="mb-4 font-semibold">Meus dados e objetivos</h2>
+        <form onSubmit={submit} className="space-y-4">
+          <FormField
+            label="Nome completo"
+            value={values.full_name ?? ''}
+            required
+            maxLength={100}
+            autoComplete="name"
+            disabled={pending || isDemo}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                full_name: event.target.value,
+              }))
+            }
+          />
+          <FormField
+            label="Meta pessoal de peso (kg, opcional)"
+            type="number"
+            min="0.1"
+            max="800"
+            step="0.1"
+            value={values.goal_weight ?? ''}
+            disabled={pending || isDemo}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                goal_weight: event.target.value,
+              }))
+            }
+          />
+          <FormField
+            label="Objetivo de movimento (min/semana, opcional)"
+            type="number"
+            min="0"
+            max="10080"
+            step="1"
+            value={values.weekly_exercise_goal ?? ''}
+            disabled={pending || isDemo}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                weekly_exercise_goal: event.target.value,
+              }))
+            }
+          />
+          <FormField
+            label="Objetivo de sono (horas, opcional)"
+            type="number"
+            min="0"
+            max="24"
+            step="0.1"
+            value={values.sleep_goal_hours ?? ''}
+            disabled={pending || isDemo}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                sleep_goal_hours: event.target.value,
+              }))
+            }
+          />
+          <p className="text-xs leading-5 text-soma-600">
+            Seus objetivos são pessoais e podem ser ajustados com o profissional
+            que acompanha você.
+          </p>
+          <Feedback error={error} message={message} />
+          <PrimaryButton type="submit" disabled={pending || isDemo}>
+            {pending ? 'Aguarde...' : 'Salvar perfil'}
+          </PrimaryButton>
+        </form>
       </MetabolicCard>
-
-      <button
-        onClick={handleSignOut}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-soma-600"
+      <a
+        href={brand.clinic.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-5 block rounded-2xl bg-white p-5 font-semibold text-soma-600"
       >
-        <LogOut className="h-5 w-5" />
-        Sair da conta
+        Conheça a {brand.clinic.name}
+      </a>
+      <button
+        type="button"
+        onClick={leave}
+        disabled={pending}
+        className="mt-4 w-full rounded-xl py-4 font-semibold text-soma-600 disabled:opacity-50"
+      >
+        {isDemo ? 'Sair da demonstração' : 'Sair da conta'}
       </button>
     </>
   )

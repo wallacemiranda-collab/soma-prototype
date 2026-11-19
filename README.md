@@ -1,102 +1,68 @@
-# Endo + Mobile Prototype
+# Endo +
 
-Protótipo navegável mobile-first do Endo +, plataforma de medicina metabólica longitudinal, criado com React, Vite, Tailwind CSS, Framer Motion e base preparada para Supabase.
+Aplicativo mobile-first para o piloto com pacientes da Clínica Endócrinos, em React, Vite, Tailwind CSS e Supabase.
 
 Endereço público: [Endo +](https://endo-plus.vercel.app/).
 
-O app funciona em modo demo quando as variáveis do Supabase não estão configuradas. Ao adicionar as credenciais, login, cadastro, login com Google, sessão persistente, rotas protegidas e logout passam a usar Supabase Auth.
+## Fluxo do paciente
 
-## Telas e fluxo
+- Cadastro por e-mail, confirmação e login com senha.
+- Recuperação de acesso e definição de uma nova senha pelo link enviado por e-mail.
+- Perfil e objetivos pessoais editáveis.
+- Registros de peso, cintura, sono, atividade, água e bem-estar, com uma anotação por data.
+- Hábitos marcados por dia, compartilhados entre Início e Hábitos.
+- Histórico por período, com gráfico das medidas registradas.
+- Educação com links reais para o canal do Dr. Wallace Miranda.
+- Sessão persistente, telas protegidas e logout.
 
-- `/` apresenta a landing comercial pública.
-- `/planos` apresenta a oferta inicial de planos.
-- `Splash` segue disponível em `/splash`.
-- `Login` permite entrar ou criar conta.
-- `Home` conecta evolução metabólica, hábitos e um insight clínico discreto.
-- `Evolução` exibe tendência longitudinal, indicadores de cuidado e timeline.
-- `Hábitos` acompanha sono, alimentação, movimento e saúde emocional.
-- `Educação` filtra vídeos e artigos metabólicos confiáveis.
-- `Perfil` reúne objetivos metabólicos, preferências e saída da conta.
+Nenhum registro de paciente usa `localStorage` como banco. Em contas reais, dados são gravados no Supabase e as políticas RLS restringem leituras e escritas ao próprio usuário. As consultas também incluem filtros explícitos por usuário autenticado.
 
-Após o login, uma bottom navigation fixa conecta os cinco destinos principais. As telas internas são protegidas e redirecionam para `/login` quando não há sessão ativa.
+A demonstração é aberta pelo botão **Explorar demonstração**, sem cadastro. Ela usa dados fictícios em memória, mostra um aviso permanente e não aceita medidas pessoais nem alterações de perfil. Sem Supabase configurado, o login real fica indisponível: não há autenticação simulada silenciosa.
 
-## Componentes-chave
+## Desenvolvimento
 
-- `MetabolicCard`, `HabitRing`, `AIInsightCard` e `EvolutionGraph`.
-- Identidade em tons de azul da logomarca da [Clínica Endócrinos](https://www.clinicaendocrinos.com.br/), com fundos brancos e azulados.
-- Transições discretas entre telas, voltadas a uma experiência calma e respirável.
-- Configuração de marca centralizada em `src/config/brand.js`.
-
-Paleta principal: azul `#1C75BC`, azul-claro `#9FD4F5`, azul de apoio `#63B0EB` e azul-marinho `#0B2D57`. O símbolo vetorial do Endo + está em `public/endo-plus-symbol.svg` e também é usado como favicon.
-
-## Executar
-
-Pré-requisitos: Node.js 18+ e pnpm.
+Use Node.js 22 ou 24 e pnpm.
 
 ```bash
 pnpm install
 pnpm run dev
-```
-
-Para gerar a versão de produção:
-
-```bash
+pnpm test
 pnpm run build
-pnpm run preview
 ```
 
-O projeto usa Rollup WebAssembly no pipeline do Vite para manter a build compatível
-com ambientes macOS que restringem o carregamento de módulos nativos.
+Copie `.env.example` para `.env.local` e use apenas a URL do projeto e a chave pública/publishable do Supabase. Nunca use `service_role` ou uma chave `sb_secret_` em uma variável `VITE_*`.
 
-## Supabase
-
-1. Crie um projeto no Supabase.
-2. Copie `.env.example` para `.env.local`.
-3. Preencha:
-
-```bash
+```text
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anon-publica
+VITE_SUPABASE_ANON_KEY=chave-publica-do-projeto
+VITE_GOOGLE_AUTH_ENABLED=false
 ```
 
-4. No Supabase, abra `SQL Editor` e execute o conteúdo de:
+O nome `VITE_SUPABASE_ANON_KEY` é mantido por compatibilidade e aceita a chave pública moderna `sb_publishable_...`.
 
-```text
-supabase/schema.sql
-```
+## Banco e autenticação
 
-5. Na Vercel, adicione as mesmas variáveis em:
+Veja [SUPABASE_SETUP.md](SUPABASE_SETUP.md) para o esquema, as URLs de retorno e a configuração da Vercel.
 
-```text
-Project Settings > Environment Variables
-```
+- `supabase/schema.sql`: tabelas, validações, perfil automático e políticas RLS.
+- `supabase/verify-patient-isolation.sql`: teste com duas contas sintéticas e rollback integral.
+- `tests/`: validação de dados e contratos de consultas/gravações por usuário.
 
-6. Faça um novo deploy.
+O login Google fica oculto até o provedor estar configurado e `VITE_GOOGLE_AUTH_ENABLED=true`. Cobranças, consultas e painel profissional não fazem parte desta etapa do piloto.
 
-Para cadastro aberto, confira em Supabase Auth se a confirmação de e-mail está alinhada com sua estratégia:
+## Marca
 
-- Confirmação ligada: o usuário cria conta e precisa confirmar o e-mail antes de entrar.
-- Confirmação desligada: o usuário entra logo após criar conta.
-
-Para login com Google, ative o provedor em `Authentication > Providers > Google` e configure as URLs indicadas em `SUPABASE_SETUP.md`.
-
-Tabelas iniciais:
-
-- `profiles`
-- `metabolic_entries`
-- `habit_logs`
-
-Todas já vêm com RLS habilitado e políticas para o usuário acessar apenas os próprios dados.
+`src/config/brand.js` centraliza o nome e os azuis da logomarca da Clínica Endócrinos. O ícone vetorial é `public/endo-plus-symbol.svg`, também usado como favicon.
 
 ## Estrutura
 
 ```text
-src/
-  components/  Componentes de interface e navegação
-  config/      Configuração de marca provisória
-  contexts/    Estado global de autenticação
-  data/        Conteúdo demonstrativo
-  screens/     Splash, Login, Home, Evolution, Habits, Education e Profile
-  App.jsx      Rotas da aplicação
-  index.css    Tema Tailwind e estilos globais
+src/components/  Interface, navegação e estados de carregamento
+src/config/      Marca e cores
+src/contexts/    Sessão e dados da conta atual
+src/lib/         Configuração pública, datas e validação
+src/screens/     Telas públicas, conta, registros e histórico
+src/services/    Supabase Auth e repositório de pacientes
+supabase/        Esquema e verificação de isolamento
+tests/           Testes com node:test
 ```

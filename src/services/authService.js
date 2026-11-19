@@ -1,146 +1,63 @@
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import { isGoogleAuthEnabled, supabase } from '../lib/supabaseClient.js'
 
-const DEMO_SESSION_KEY = 'soma_demo_session'
-
-function createDemoUser(email, fullName = 'Marina Alves') {
+function unavailable() {
   return {
-    id: 'demo-user',
-    email,
-    user_metadata: {
-      full_name: fullName,
-    },
+    data: null,
+    error: new Error('O acesso às contas está temporariamente indisponível.'),
   }
-}
-
-function saveDemoSession(user) {
-  localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify({ user }))
-}
-
-function readDemoSession() {
-  const storedSession = localStorage.getItem(DEMO_SESSION_KEY)
-
-  if (!storedSession) {
-    return null
-  }
-
-  try {
-    return JSON.parse(storedSession)
-  } catch {
-    localStorage.removeItem(DEMO_SESSION_KEY)
-    return null
-  }
-}
-
-function clearDemoSession() {
-  localStorage.removeItem(DEMO_SESSION_KEY)
-}
-
-function getAuthRedirectUrl() {
-  return `${window.location.origin}/home`
 }
 
 export async function signInWithEmail(email, password) {
-  if (!isSupabaseConfigured) {
-    const user = createDemoUser(email)
-    saveDemoSession(user)
-
-    return {
-      data: {
-        user,
-      },
-      error: null,
-      mode: 'demo',
-    }
-  }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  return { data, error, mode: 'supabase' }
+  if (!supabase) return unavailable()
+  return supabase.auth.signInWithPassword({ email: email.trim(), password })
 }
 
 export async function signUpWithEmail(email, password, fullName) {
-  if (!isSupabaseConfigured) {
-    const user = createDemoUser(email, fullName)
-    saveDemoSession(user)
-
-    return {
-      data: {
-        user,
-      },
-      error: null,
-      mode: 'demo',
-    }
-  }
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
+  if (!supabase) return unavailable()
+  return supabase.auth.signUp({
+    email: email.trim(),
     password,
     options: {
-      data: {
-        full_name: fullName,
-      },
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
+      data: { full_name: fullName.trim() },
     },
   })
-
-  return { data, error, mode: 'supabase' }
 }
 
 export async function signInWithGoogle() {
-  if (!isSupabaseConfigured) {
-    const user = createDemoUser('google.demo@soma.app', 'Usuário Google')
-    saveDemoSession(user)
-
-    return {
-      data: {
-        user,
-      },
-      error: null,
-      mode: 'demo',
-    }
-  }
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  if (!isGoogleAuthEnabled) return unavailable()
+  return supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: getAuthRedirectUrl(),
-    },
+    options: { redirectTo: `${window.location.origin}/auth/callback` },
   })
-
-  return { data, error, mode: 'supabase', redirecting: !error }
 }
 
 export async function signOut() {
-  if (!isSupabaseConfigured) {
-    clearDemoSession()
-    return { error: null, mode: 'demo' }
-  }
+  if (!supabase) return { error: null }
+  return supabase.auth.signOut()
+}
 
-  const { error } = await supabase.auth.signOut()
-  return { error, mode: 'supabase' }
+export async function requestPasswordReset(email) {
+  if (!supabase) return unavailable()
+  return supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: `${window.location.origin}/redefinir-senha`,
+  })
+}
+
+export async function updatePassword(password) {
+  if (!supabase) return unavailable()
+  return supabase.auth.updateUser({ password })
 }
 
 export async function getCurrentSession() {
-  if (!isSupabaseConfigured) {
-    return { session: readDemoSession(), mode: 'demo' }
-  }
-
+  if (!supabase) return { session: null, error: null }
   const { data, error } = await supabase.auth.getSession()
-  return { session: data?.session ?? null, error, mode: 'supabase' }
+  return { session: data?.session ?? null, error }
 }
 
 export function onAuthStateChange(callback) {
-  if (!isSupabaseConfigured) {
-    return {
-      unsubscribe() {},
-    }
-  }
-
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session)
-  })
-
-  return data.subscription
+  if (!supabase) return { unsubscribe() {} }
+  return supabase.auth.onAuthStateChange((event, session) =>
+    callback(session, event),
+  ).data.subscription
 }

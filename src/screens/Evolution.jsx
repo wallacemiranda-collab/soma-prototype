@@ -1,70 +1,144 @@
-import { ArrowUpRight, CalendarCheck2 } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import EvolutionGraph from '../components/EvolutionGraph'
 import MetabolicCard from '../components/MetabolicCard'
-import { areas, timeline, weeklyProgress } from '../data/mockData'
-import { Pill, ProgressBar, SectionTitle } from '../components/ui'
+import { usePatient } from '../contexts/PatientContext'
+import {
+  dateBefore,
+  formatDate,
+  formatNumber,
+  weeklyHabitProgress,
+} from '../lib/patientData'
 
 export default function Evolution() {
+  const { entries, habitLogs } = usePatient()
+  const [days, setDays] = useState(30)
+  const visible = entries.filter(
+    (entry) => entry.entry_date >= dateBefore(days - 1),
+  )
+  const weights = visible
+    .filter((entry) => entry.weight_kg !== null)
+    .slice()
+    .reverse()
+  const current = weights.at(-1)?.weight_kg
+  const difference =
+    weights.length > 1 ? Number(current) - Number(weights[0].weight_kg) : null
   return (
     <>
-      <AppHeader title="Evolução" subtitle="Acompanhe sua história metabólica" simple />
-
-      <MetabolicCard emphasis>
-        <p className="text-sm text-soma-200">Evolução longitudinal</p>
-        <div className="mt-2 flex items-end justify-between">
-          <span className="text-3xl font-semibold">12 semanas</span>
-          <Pill tone="yellow">Consistente</Pill>
-        </div>
-        <div className="mt-7 flex items-center justify-between rounded-2xl bg-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <CalendarCheck2 className="h-6 w-6 text-soma-300" />
-            <div>
-              <p className="text-xs text-soma-200">Próximo acompanhamento</p>
-              <p className="font-semibold">28 de maio</p>
-            </div>
-          </div>
-          <span className="text-xs text-soma-200">4 dias</span>
-        </div>
-      </MetabolicCard>
-
-      <MetabolicCard className="mt-5">
-        <SectionTitle title="Tendência de hábitos" action="7 dias" />
-        <EvolutionGraph points={weeklyProgress} />
-      </MetabolicCard>
-
-      <section className="mt-7">
-        <SectionTitle title="Indicadores de cuidado" />
-        <div className="space-y-3">
-          {areas.map((area) => (
-            <MetabolicCard key={area.title} className="!p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="font-medium">{area.title}</span>
-                <span className="flex items-center text-sm font-semibold text-soma-600">
-                  {area.delta}
-                  <ArrowUpRight className="h-4 w-4" />
-                </span>
-              </div>
-              <ProgressBar value={area.value} barClassName={area.tone} />
-            </MetabolicCard>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-7">
-        <SectionTitle title="Linha do tempo" />
-        <MetabolicCard className="space-y-5 !p-4">
-          {timeline.map((event) => (
-            <div key={event.date} className="flex gap-4">
-              <span className="w-14 shrink-0 text-xs font-semibold text-soma-500">{event.date}</span>
-              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-soma-500" />
-              <div>
-                <p className="text-sm font-semibold text-soma-900">{event.title}</p>
-                <p className="text-xs text-soma-600">{event.description}</p>
-              </div>
-            </div>
-          ))}
+      <AppHeader
+        title="Sua evolução"
+        subtitle="Histórico das suas próprias anotações"
+        simple
+      />
+      <div className="mb-5 flex gap-2">
+        {[7, 30, 90].map((period) => (
+          <button
+            key={period}
+            type="button"
+            aria-pressed={days === period}
+            onClick={() => setDays(period)}
+            className={`rounded-full px-4 py-2 text-sm font-semibold ${days === period ? 'bg-soma-800 text-white' : 'bg-white text-soma-600'}`}
+          >
+            {period} dias
+          </button>
+        ))}
+      </div>
+      <section className="grid grid-cols-2 gap-3">
+        <MetabolicCard>
+          <p className="text-sm text-soma-600">Último peso no período</p>
+          <p className="mt-2 text-xl font-semibold">
+            {formatNumber(current, ' kg')}
+          </p>
         </MetabolicCard>
+        <MetabolicCard>
+          <p className="text-sm text-soma-600">Variação no período</p>
+          <p className="mt-2 text-xl font-semibold">
+            {difference === null
+              ? 'Sem comparação'
+              : `${difference > 0 ? '+' : ''}${formatNumber(difference, ' kg')}`}
+          </p>
+        </MetabolicCard>
+      </section>
+      <MetabolicCard className="mt-5">
+        <h2 className="mb-4 font-semibold">Peso registrado</h2>
+        {weights.length ? (
+          <EvolutionGraph
+            points={weights.map((entry) => ({
+              day: formatDate(entry.entry_date),
+              value: Number(entry.weight_kg),
+            }))}
+            label="Peso registrado, em quilogramas"
+          />
+        ) : (
+          <p className="text-sm text-soma-600">
+            Ainda não há medidas de peso neste período.
+          </p>
+        )}
+      </MetabolicCard>
+      <MetabolicCard className="mt-5">
+        <h2 className="mb-4 font-semibold">
+          Hábitos marcados · últimos 7 dias
+        </h2>
+        <EvolutionGraph
+          points={weeklyHabitProgress(habitLogs)}
+          label="Percentual de hábitos marcados por dia"
+        />
+      </MetabolicCard>
+      <section className="mt-7">
+        <h2 className="mb-4 text-lg font-semibold">Registros no período</h2>
+        {!visible.length ? (
+          <MetabolicCard>
+            <p className="text-sm text-soma-600">
+              Seu histórico aparecerá aqui depois do primeiro registro.
+            </p>
+            <Link
+              to="/registro"
+              className="mt-4 inline-block font-semibold text-soma-600"
+            >
+              Fazer meu primeiro registro
+            </Link>
+          </MetabolicCard>
+        ) : (
+          <div className="space-y-3">
+            {visible.map((entry) => (
+              <MetabolicCard key={entry.id}>
+                <h3 className="font-semibold">
+                  {formatDate(entry.entry_date)}
+                </h3>
+                <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  {[
+                    ['Peso', formatNumber(entry.weight_kg, ' kg')],
+                    ['Cintura', formatNumber(entry.waist_cm, ' cm')],
+                    [
+                      'Sono',
+                      formatNumber(
+                        entry.sleep_minutes === null
+                          ? null
+                          : entry.sleep_minutes / 60,
+                        ' h',
+                      ),
+                    ],
+                    ['Movimento', formatNumber(entry.activity_minutes, ' min')],
+                    ['Água', formatNumber(entry.water_liters, ' L')],
+                    ['Bem-estar', formatNumber(entry.mood_score, '/10')],
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <dt className="text-xs text-soma-600">{label}</dt>
+                      <dd className="mt-1">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <Link
+                  to={`/registro?data=${entry.entry_date}`}
+                  className="mt-4 inline-block text-sm font-semibold text-soma-600"
+                >
+                  Editar registro
+                </Link>
+              </MetabolicCard>
+            ))}
+          </div>
+        )}
       </section>
     </>
   )

@@ -14,6 +14,9 @@ import Login from './screens/Login'
 import Pricing from './screens/Pricing'
 import Profile from './screens/Profile'
 import Splash from './screens/Splash'
+import PatientEntry from './screens/PatientEntry'
+import AuthCallback from './screens/AuthCallback'
+import ResetPassword from './screens/ResetPassword'
 
 export default function App() {
   useEffect(() => {
@@ -28,6 +31,8 @@ export default function App() {
         <Route path="/splash" element={<Splash />} />
         <Route path="/planos" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/redefinir-senha" element={<ResetPassword />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<MobileShell />}>
             <Route path="/home" element={<Home />} />
@@ -35,6 +40,7 @@ export default function App() {
             <Route path="/habitos" element={<Habits />} />
             <Route path="/educacao" element={<Education />} />
             <Route path="/perfil" element={<Profile />} />
+            <Route path="/registro" element={<PatientEntry />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

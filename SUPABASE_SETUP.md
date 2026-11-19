@@ -1,156 +1,62 @@
-# Endo + Supabase Setup
+# Supabase do Endo +
 
-Use este checklist para ligar o protótipo Endo + a dados reais.
+O app usa o projeto Supabase existente. Não é necessário criar outro banco para o piloto.
 
-## 1. Criar projeto
+## Banco
 
-1. Acesse o Supabase.
-2. Crie um novo projeto.
-3. Guarde:
-   - Project URL
-   - anon public key
+Execute `supabase/schema.sql` pelo SQL Editor ou pela integração Supabase. Ele cria:
 
-## 2. Criar tabelas
+- `profiles`: perfil e objetivos pessoais, vinculados a `auth.users`.
+- `metabolic_entries`: medidas, com unicidade por usuário e data.
+- `habit_logs`: marcações de hábito, com unicidade por usuário, data e hábito.
 
-No Supabase, abra:
+As três tabelas usam RLS. Usuários autenticados podem ler, inserir e atualizar somente os próprios dados. Não há acesso anônimo às tabelas nem acesso profissional compartilhado nesta etapa.
 
-```text
-SQL Editor > New query
-```
+O cadastro cria o perfil automaticamente. Usuários antigos sem perfil podem criá-lo no primeiro acesso por uma operação restrita ao próprio ID.
 
-Cole e execute o conteúdo de:
+Para verificar o isolamento, execute `supabase/verify-patient-isolation.sql`. As contas e os registros sintéticos são criados dentro de uma transação e integralmente revertidos. O resultado esperado é `patient_isolation_passed`.
 
-```text
-supabase/schema.sql
-```
+## URLs dos e-mails de autenticação
 
-Isso cria:
-
-- `profiles`
-- `metabolic_entries`
-- `habit_logs`
-- políticas RLS
-- trigger para criar perfil automaticamente a partir de `auth.users`
-
-## 3. Criar usuário demo
-
-No Supabase:
-
-```text
-Authentication > Users > Add user
-```
-
-Sugestão para teste:
-
-```text
-Email: marina@soma.app
-Password: soma1234
-```
-
-Depois, no SQL Editor, rode:
-
-```text
-supabase/seed-demo.sql
-```
-
-## 4. Configurar local
-
-Crie `.env.local`:
-
-```bash
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anon-publica
-```
-
-Rode:
-
-```bash
-pnpm install
-pnpm run dev
-```
-
-## 5. Configurar Vercel
-
-Na Vercel:
-
-```text
-Project Settings > Environment Variables
-```
-
-Adicione:
-
-```text
-VITE_SUPABASE_URL
-VITE_SUPABASE_ANON_KEY
-```
-
-Depois faça um novo deploy.
-
-## 6. Autenticação
-
-O app já usa Supabase Auth quando as variáveis existem.
-
-Funcionalidades prontas:
-
-- Entrar com e-mail e senha.
-- Criar conta com nome, e-mail e senha.
-- Entrar com conta Google.
-- Manter sessão ativa.
-- Proteger telas internas.
-- Sair da conta pelo Perfil.
-
-Sobre confirmação de e-mail:
-
-- Se a confirmação estiver ligada no Supabase, o usuário verá a mensagem para confirmar o e-mail antes de entrar.
-- Se a confirmação estiver desligada, o cadastro leva diretamente para o app.
-
-Para ajustar:
-
-```text
-Authentication > Providers > Email
-```
-
-Configure conforme o piloto comercial.
-
-## 7. Login com Google
-
-No Supabase:
-
-```text
-Authentication > Providers > Google
-```
-
-Ative o provedor Google e informe:
-
-- Client ID
-- Client Secret
-
-No Google Cloud Console, configure o callback autorizado do Supabase:
-
-```text
-https://SEU-PROJECT-REF.supabase.co/auth/v1/callback
-```
-
-No Supabase, confira também as URLs permitidas:
-
-```text
-Authentication > URL Configuration
-```
-
-Use:
+Em **Authentication > URL Configuration**, configure:
 
 ```text
 Site URL:
 https://endo-plus.vercel.app
 
 Redirect URLs:
-https://endo-plus.vercel.app/home
-https://soma-prototype-nc87.vercel.app/home
-http://localhost:5173/home
+https://endo-plus.vercel.app/auth/callback
+https://endo-plus.vercel.app/redefinir-senha
+http://localhost:5173/auth/callback
+http://localhost:5173/redefinir-senha
 ```
 
-O app redireciona o login Google para `/home` depois da autenticação.
+Mantenha a confirmação de e-mail ativa. O cadastro sem sessão exibe a orientação para confirmar o e-mail; ele não libera as telas internas. A recuperação envia o usuário à tela de nova senha, com mínimo de 8 caracteres e confirmação.
 
-## 8. Estado atual do app
+Para uso além de poucos testes, configure o provedor de envio de e-mail no Supabase e confira a entrega dos e-mails com a conta da clínica. O funcionamento dos links depende das URLs permitidas acima.
 
-Sem variáveis, o app continua em modo demo para não quebrar o protótipo.
+## Vercel
+
+No projeto que atende `https://endo-plus.vercel.app`, configure as variáveis públicas nos ambientes correspondentes e publique novamente:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+VITE_GOOGLE_AUTH_ENABLED=false
+```
+
+Use a chave publishable habilitada do projeto. A aplicação rejeita chaves privadas `sb_secret_` e JWTs com papel `service_role`. As regras RLS, e não a visibilidade da chave pública, protegem os registros.
+
+## Google, opcional
+
+O botão só aparece quando `VITE_GOOGLE_AUTH_ENABLED=true`. Antes disso, ative o provedor Google no Supabase, cadastre o Client ID e o Client Secret diretamente no painel e configure o callback do projeto no Google Cloud:
+
+```text
+https://SEU-PROJECT-REF.supabase.co/auth/v1/callback
+```
+
+O retorno para o app é `/auth/callback`. O Client Secret nunca deve estar no frontend ou no repositório.
+
+## Demonstração
+
+Use o botão **Explorar demonstração**. Não crie uma conta pública com uma senha conhecida para demonstrar o produto. `supabase/seed-demo.sql` é um arquivo legado de desenvolvimento e não é necessário para este piloto.

@@ -29,7 +29,7 @@ export default function Landing() {
       <main className="mx-auto min-h-dvh max-w-[430px] overflow-hidden bg-mist text-soma-900 shadow-2xl shadow-soma-800/5">
         <section className="relative bg-soma-900 px-6 pb-9 pt-8 text-white">
           <div className="absolute -right-24 top-10 h-56 w-56 rounded-full bg-soma-400/20" />
-          <div className="absolute -left-28 bottom-10 h-56 w-56 rounded-full bg-sun/20" />
+          <div className="absolute -left-28 bottom-10 h-56 w-56 rounded-full bg-soma-200/20" />
 
           <div className="relative flex items-center justify-between">
             <BrandMark compact inverse />
@@ -109,7 +109,7 @@ export default function Landing() {
         <section className="px-6 pb-9">
           <div className="rounded-[1.75rem] bg-white p-5 shadow-card">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sun/20 text-[#9a6a18]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-soma-100 text-soma-500">
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>

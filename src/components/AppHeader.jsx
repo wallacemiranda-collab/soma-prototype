@@ -25,7 +25,7 @@ export default function AppHeader({ title, subtitle, simple = false }) {
       <div className="flex items-center gap-3">
         <button aria-label="Notificações" className="relative rounded-full bg-white p-3 shadow-card">
           <Bell className="h-5 w-5 text-soma-800" />
-          <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-rose" />
+          <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-soma-500" />
         </button>
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-soma-800 text-sm font-semibold text-white">
           {user.avatar}

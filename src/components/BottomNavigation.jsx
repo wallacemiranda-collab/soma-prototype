@@ -18,7 +18,7 @@ export default function BottomNavigation() {
           to={path}
           className={({ isActive }) =>
             `flex min-w-[64px] flex-col items-center gap-1 text-[11px] font-medium transition duration-200 ${
-              isActive ? 'text-soma-700' : 'text-soma-300'
+              isActive ? 'text-soma-500' : 'text-soma-600'
             }`
           }
         >

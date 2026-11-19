@@ -30,7 +30,7 @@ export const weeklyProgress = [
 export const areas = [
   { title: 'Qualidade do sono', value: 78, delta: '+6%', tone: 'bg-soma-500' },
   { title: 'Atividade física', value: 64, delta: '+11%', tone: 'bg-soma-400' },
-  { title: 'Saúde emocional', value: 81, delta: '+4%', tone: 'bg-sun' },
+  { title: 'Saúde emocional', value: 81, delta: '+4%', tone: 'bg-soma-300' },
 ]
 
 export const courses = [

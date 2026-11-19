@@ -3,8 +3,10 @@
 @tailwind utilities;
 
 :root {
-  color: #0a2332;
-  background: #edf4f3;
+  --brand-primary: theme('colors.soma.500');
+  --brand-light-blue: theme('colors.soma.300');
+  color: theme('colors.soma.900');
+  background: #edf4fc;
   font-family: "Inter", "Avenir Next", "Segoe UI", Arial, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,15 +26,34 @@ input {
   font: inherit;
 }
 
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: 4px;
+}
+
+::selection {
+  background: theme('colors.soma.200');
+  color: theme('colors.soma.900');
+}
+
 #root {
   min-height: 100dvh;
 }
 
 .app-backdrop {
   background:
-    radial-gradient(circle at 90% 4%, rgba(25, 124, 121, 0.14), transparent 30%),
-    radial-gradient(circle at 8% 86%, rgba(201, 167, 106, 0.1), transparent 26%),
-    #edf4f3;
+    radial-gradient(circle at 90% 4%, rgba(99, 176, 235, 0.18), transparent 35%),
+    radial-gradient(circle at 8% 86%, rgba(159, 212, 245, 0.16), transparent 30%),
+    #edf4fc;
+}
+
+.brand-hero {
+  background: linear-gradient(145deg, var(--brand-primary) 0%, theme('colors.soma.800') 100%);
 }
 
 .safe-bottom {

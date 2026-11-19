@@ -9,7 +9,7 @@ export default function Splash() {
     <div className="app-backdrop min-h-dvh">
       <main className="relative mx-auto flex min-h-dvh max-w-[430px] flex-col overflow-hidden bg-soma-900 px-7 pb-9 pt-16 text-white">
         <div className="absolute -right-24 top-10 h-64 w-64 rounded-full bg-soma-500/20" />
-        <div className="absolute -left-28 bottom-36 h-64 w-64 rounded-full bg-sun/20" />
+        <div className="absolute -left-28 bottom-36 h-64 w-64 rounded-full bg-soma-200/20" />
 
         <motion.div
           className="relative"

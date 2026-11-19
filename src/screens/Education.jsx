@@ -51,13 +51,13 @@ export default function Education() {
         </div>
       </MetabolicCard>
 
-      <MetabolicCard className="mt-4 !bg-[#fff7f5]">
+      <MetabolicCard className="mt-4 !bg-soma-50">
         <div className="flex gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-rose">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-soma-500">
             <Youtube className="h-6 w-6" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-soma-600">
               Canal recomendado
             </p>
             <h2 className="mt-1 font-semibold text-soma-900">Wallace Miranda no YouTube</h2>
@@ -86,7 +86,7 @@ export default function Education() {
           <MetabolicCard key={course.title} className="flex gap-3 !p-4">
             <div
               className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${
-                index % 2 === 0 ? 'bg-soma-100 text-soma-700' : 'bg-[#fce9e4] text-rose'
+                index % 2 === 0 ? 'bg-soma-100 text-soma-700' : 'bg-soma-50 text-soma-500'
               }`}
             >
               <BookOpen className="h-7 w-7" />

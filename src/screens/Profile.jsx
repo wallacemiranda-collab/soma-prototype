@@ -58,7 +58,7 @@ export default function Profile() {
             const Icon = icons[icon]
             return (
               <MetabolicCard key={title} className="w-36 shrink-0 !p-4">
-                <Icon className="h-6 w-6 text-sun" />
+                <Icon className="h-6 w-6 text-soma-500" />
                 <h3 className="mt-3 text-sm font-semibold">{title}</h3>
                 <p className="mt-1 text-xs text-soma-500">{description}</p>
               </MetabolicCard>
@@ -85,7 +85,7 @@ export default function Profile() {
 
       <button
         onClick={handleSignOut}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-rose"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-soma-600"
       >
         <LogOut className="h-5 w-5" />
         Sair da conta

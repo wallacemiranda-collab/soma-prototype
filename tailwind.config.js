@@ -1,3 +1,5 @@
+import { brand } from './src/config/brand.js'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
@@ -5,26 +7,24 @@ export default {
     extend: {
       colors: {
         soma: {
-          50: '#f1f7f6',
-          100: '#deedeb',
-          200: '#c0dcda',
-          300: '#8bbfbb',
-          400: '#4e9b98',
-          500: '#197c79',
-          600: '#116663',
-          700: '#0b5353',
-          800: '#073f43',
-          900: '#0a2332',
+          50: '#f2f8fe',
+          100: '#e3f0fc',
+          200: brand.colors.softBlue,
+          300: brand.colors.lightBlue,
+          400: '#388bd1',
+          500: brand.colors.primary,
+          600: '#1161b5',
+          700: '#184a7c',
+          800: '#123e6b',
+          900: brand.colors.navy,
         },
-        sun: '#c9a76a',
-        rose: '#ba7c72',
-        mist: '#f8faf9',
+        mist: '#f7faff',
       },
       fontFamily: {
         sans: ['Inter', 'Avenir Next', 'Segoe UI', 'Arial', 'sans-serif'],
       },
       boxShadow: {
-        card: '0 12px 34px rgba(10, 35, 50, 0.06)',
+        card: '0 10px 30px rgba(17, 98, 181, 0.07)',
       },
     },
   },

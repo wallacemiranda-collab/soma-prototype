@@ -21,9 +21,11 @@ Após o login, uma bottom navigation fixa conecta os cinco destinos principais. 
 ## Componentes-chave
 
 - `MetabolicCard`, `HabitRing`, `AIInsightCard` e `EvolutionGraph`.
-- Paleta premium com Deep Medical Teal, Midnight Navy e Soft Clinical White.
+- Identidade em tons de azul da logomarca da [Clínica Endócrinos](https://www.clinicaendocrinos.com.br/), com fundos brancos e azulados.
 - Transições discretas entre telas, voltadas a uma experiência calma e respirável.
 - Configuração de marca centralizada em `src/config/brand.js`.
+
+Paleta principal: azul `#1C75BC`, azul-claro `#9FD4F5`, azul de apoio `#63B0EB` e azul-marinho `#0B2D57`. O símbolo vetorial do Endo + está em `public/endo-plus-symbol.svg` e também é usado como favicon.
 
 ## Executar
 

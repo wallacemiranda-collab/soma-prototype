@@ -26,7 +26,7 @@ export default function Home() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm text-soma-200">
-              <Flame className="h-4 w-4 text-sun" />
+              <Flame className="h-4 w-4 text-soma-200" />
               {user.streak} dias de cuidado contínuo
             </div>
             <h2 className="mt-4 text-2xl font-semibold">Jornada metabólica</h2>
@@ -39,7 +39,7 @@ export default function Home() {
           <span>Meta de 12 semanas</span>
           <span className="text-soma-200">{user.progress}% acompanhada</span>
         </div>
-        <ProgressBar value={user.progress} className="mt-3 bg-white/15" barClassName="bg-sun" />
+        <ProgressBar value={user.progress} className="mt-3 bg-white/15" barClassName="bg-soma-200" />
       </MetabolicCard>
 
       <div className="mt-4">

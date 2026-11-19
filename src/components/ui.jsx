@@ -44,8 +44,8 @@ export function SectionTitle({ title, action, onClick }) {
 export function Pill({ children, tone = 'green' }) {
   const tones = {
     green: 'bg-soma-100 text-soma-700',
-    yellow: 'bg-[#fff1d8] text-[#9a5c07]',
-    coral: 'bg-[#fce9e4] text-[#b45040]',
+    yellow: 'bg-soma-100 text-soma-800',
+    coral: 'bg-soma-50 text-soma-700',
   }
 
   return (

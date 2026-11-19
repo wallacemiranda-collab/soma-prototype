@@ -141,9 +141,10 @@ Use:
 
 ```text
 Site URL:
-https://soma-prototype-nc87.vercel.app
+https://endo-plus.vercel.app
 
 Redirect URLs:
+https://endo-plus.vercel.app/home
 https://soma-prototype-nc87.vercel.app/home
 http://localhost:5173/home
 ```

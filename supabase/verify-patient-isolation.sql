@@ -5,7 +5,22 @@ declare
   patient_a uuid := gen_random_uuid();
   patient_b uuid := gen_random_uuid();
   row_count integer;
+  relation_name text;
+  privilege_name text;
 begin
+  foreach relation_name in array array['public.profiles', 'public.metabolic_entries', 'public.habit_logs'] loop
+    foreach privilege_name in array array['DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'] loop
+      if has_table_privilege('authenticated', relation_name, privilege_name) then
+        raise exception 'Authenticated role has excessive privilege % on %', privilege_name, relation_name;
+      end if;
+    end loop;
+    foreach privilege_name in array array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'] loop
+      if has_table_privilege('anon', relation_name, privilege_name) then
+        raise exception 'Anonymous role can access %', relation_name;
+      end if;
+    end loop;
+  end loop;
+
   insert into auth.users (id, aud, role, email, raw_user_meta_data)
   values
     (patient_a, 'authenticated', 'authenticated', 'endo-test-' || patient_a || '@example.invalid', '{"full_name":"Teste técnico A"}'::jsonb),

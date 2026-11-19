@@ -150,7 +150,7 @@ create policy "Users can update own habit logs"
   with check (auth.uid() = user_id);
 
 grant usage on schema public to authenticated;
+revoke all on public.profiles, public.metabolic_entries, public.habit_logs from public, anon, authenticated;
 grant select, insert, update on public.profiles, public.metabolic_entries, public.habit_logs to authenticated;
-revoke all on public.profiles, public.metabolic_entries, public.habit_logs from anon;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
 revoke execute on function public.set_updated_at() from public, anon, authenticated;

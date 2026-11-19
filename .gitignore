@@ -6,3 +6,6 @@ dist
 .env.*
 !.env.example
 .pnpm-store
+test-results
+test-results-public
+playwright-report

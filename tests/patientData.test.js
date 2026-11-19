@@ -94,3 +94,69 @@ test('backend configuration fails closed and rejects private service keys', () =
     true,
   )
 })
+
+test('all measurements enforce their limits and integer fields reject fractions', () => {
+  const bounds = {
+    weight_kg: [0.1, 800],
+    waist_cm: [1, 500],
+    sleep_minutes: [0, 1440],
+    activity_minutes: [0, 1440],
+    water_liters: [0, 30],
+    mood_score: [1, 10],
+  }
+  for (const [field, [min, max]] of Object.entries(bounds)) {
+    for (const value of [min, max])
+      assert.equal(
+        validateEntry({ entry_date: localDate(), [field]: value })[field],
+        value,
+      )
+    for (const value of [min - 1, max + 1, 'abc', {}, NaN])
+      assert.throws(() =>
+        validateEntry({ entry_date: localDate(), [field]: value }),
+      )
+  }
+  for (const field of ['sleep_minutes', 'activity_minutes', 'mood_score']) {
+    assert.throws(() =>
+      validateEntry({ entry_date: localDate(), [field]: 1.5 }),
+    )
+  }
+})
+
+test('optional goals preserve null and zero without inventing clinical targets', () => {
+  const profile = validateProfile({
+    full_name: '  Patient  ',
+    goal_weight: '',
+    weekly_exercise_goal: '0',
+    sleep_goal_hours: '0',
+    id: 'other',
+  })
+  assert.deepEqual(profile, {
+    full_name: 'Patient',
+    goal_weight: null,
+    weekly_exercise_goal: 0,
+    sleep_goal_hours: 0,
+  })
+  assert.throws(() => validateProfile({ full_name: 'A'.repeat(101) }))
+  assert.throws(() =>
+    validateProfile({ full_name: 'Patient', weekly_exercise_goal: 1.5 }),
+  )
+  assert.throws(() =>
+    validateProfile({ full_name: 'Patient', sleep_goal_hours: 25 }),
+  )
+})
+
+test('calendar validation handles leap years and rejects malformed or non-string dates', () => {
+  assert.equal(validateDate('2024-02-29', '2024-03-01'), '2024-02-29')
+  for (const date of [
+    '2025-02-29',
+    '2026-13-01',
+    '2026-00-01',
+    '2026-01-00',
+    '2026-1-1',
+    '',
+    null,
+    20260101,
+  ]) {
+    assert.throws(() => validateDate(date, '2026-12-31'))
+  }
+})

@@ -18,6 +18,7 @@ export default function Login() {
     signUp,
     signInGoogle,
     startDemo,
+    isDemo,
     isAuthenticated,
     isLoading,
   } = useAuth()
@@ -46,7 +47,7 @@ export default function Login() {
     : '/home'
 
   if (!isLoading && isAuthenticated)
-    return <Navigate to={destination} replace />
+    return <Navigate to={isDemo ? '/home' : destination} replace />
 
   function changeMode(next) {
     setMode(next)

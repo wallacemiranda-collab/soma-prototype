@@ -45,10 +45,40 @@ begin
   get diagnostics row_count = row_count;
   if row_count <> 0 then raise exception 'Another patient entry was updated'; end if;
 
+  update public.profiles set full_name = 'Not permitted' where id = patient_b;
+  get diagnostics row_count = row_count;
+  if row_count <> 0 then raise exception 'Another profile was updated'; end if;
+  update public.habit_logs set value = 0 where user_id = patient_b;
+  get diagnostics row_count = row_count;
+  if row_count <> 0 then raise exception 'Another patient habit was updated'; end if;
+
   begin
     insert into public.metabolic_entries (user_id, entry_date, weight_kg)
     values (patient_b, current_date - 1, 80);
     raise exception 'Another patient entry was inserted';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    insert into public.profiles (id, full_name) values (patient_b, 'Not permitted')
+    on conflict (id) do update set full_name = excluded.full_name;
+    raise exception 'Another profile was overwritten';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.habit_logs (user_id, logged_at, habit_key, value)
+    values (patient_b, current_date - 1, 'movement', 1);
+    raise exception 'Another patient habit was inserted';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.metabolic_entries set user_id = patient_b where user_id = patient_a;
+    raise exception 'A record was reassigned to another patient';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.habit_logs set user_id = patient_b where user_id = patient_a;
+    raise exception 'A habit was reassigned to another patient';
   exception when insufficient_privilege then null;
   end;
 
@@ -61,6 +91,24 @@ begin
   update public.habit_logs set value = 0 where user_id = patient_a and habit_key = 'sleep';
   get diagnostics row_count = row_count;
   if row_count <> 1 then raise exception 'Own habit could not be updated'; end if;
+  insert into public.habit_logs (user_id, logged_at, habit_key, value)
+  values (patient_a, current_date, 'sleep', 1)
+  on conflict (user_id, logged_at, habit_key) do update set value = excluded.value;
+  select count(*) into row_count from public.habit_logs
+  where user_id = patient_a and logged_at = current_date and habit_key = 'sleep' and value = 1;
+  if row_count <> 1 then raise exception 'Habit upsert produced an unexpected record'; end if;
+  insert into public.metabolic_entries (user_id, entry_date, activity_minutes, sleep_minutes)
+  values (patient_a, current_date - 1, 0, 454);
+  select count(*) into row_count from public.metabolic_entries where user_id = patient_a;
+  if row_count <> 2 then raise exception 'Records on separate dates were not preserved'; end if;
+  update public.profiles set full_name = 'Updated synthetic patient', goal_weight = null where id = patient_a;
+  get diagnostics row_count = row_count;
+  if row_count <> 1 then raise exception 'Own profile could not be updated'; end if;
+  begin
+    update public.metabolic_entries set mood_score = 11 where user_id = patient_a;
+    raise exception 'An out-of-range measurement was accepted';
+  exception when check_violation then null;
+  end;
   execute 'reset role';
 end;
 $$;

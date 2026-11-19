@@ -48,6 +48,8 @@ Veja [SUPABASE_SETUP.md](SUPABASE_SETUP.md) para o esquema, as URLs de retorno e
 - `supabase/verify-patient-isolation.sql`: teste com duas contas sintéticas e rollback integral.
 - `tests/`: validação de dados e contratos de consultas/gravações por usuário.
 
+Veja [TESTING.md](TESTING.md) para os testes de navegador, a checagem do site publicado e os limites de cada verificação. As suítes de interface usam contas sintéticas e não alteram os dados dos pacientes.
+
 O login Google fica oculto até o provedor estar configurado e `VITE_GOOGLE_AUTH_ENABLED=true`. Cobranças, consultas e painel profissional não fazem parte desta etapa do piloto.
 
 ## Marca

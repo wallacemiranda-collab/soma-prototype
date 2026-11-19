@@ -3,7 +3,10 @@ import assert from 'node:assert/strict'
 import { createPatientRepository } from '../src/services/patientRepository.js'
 import { localDate } from '../src/lib/patientData.js'
 
-function fixture(user = { id: 'patient-a', email: 'example@example.invalid' }) {
+function fixture(
+  user = { id: 'patient-a', email: 'example@example.invalid' },
+  options = {},
+) {
   const calls = []
   const client = {
     auth: { getUser: async () => ({ data: { user }, error: null }) },
@@ -13,8 +16,12 @@ function fixture(user = { id: 'patient-a', email: 'example@example.invalid' }) {
       const response = () => ({
         data:
           call.values ??
-          (table === 'profiles' ? { id: user.id, full_name: 'Patient A' } : []),
-        error: null,
+          (table === 'profiles'
+            ? 'profile' in options
+              ? options.profile
+              : { id: user.id, full_name: 'Patient A' }
+            : []),
+        error: options.errors?.[table] ?? null,
       })
       const query = {
         select() {
@@ -24,13 +31,16 @@ function fixture(user = { id: 'patient-a', email: 'example@example.invalid' }) {
           call.filters.push([key, value])
           return query
         },
-        gte() {
+        gte(key, value) {
+          call.minimum = [key, value]
           return query
         },
-        order() {
+        order(key, options) {
+          call.order = [key, options]
           return query
         },
-        limit() {
+        limit(value) {
+          call.limit = value
           return query
         },
         upsert(values, options) {
@@ -47,7 +57,7 @@ function fixture(user = { id: 'patient-a', email: 'example@example.invalid' }) {
       return query
     },
   }
-  return { repository: createPatientRepository(client), calls }
+  return { repository: createPatientRepository(client), client, calls }
 }
 
 test('missing backend or session never grants access or issues data queries', async () => {
@@ -95,4 +105,66 @@ test('habit and profile writes cannot target another patient', async () => {
   assert.equal(calls[1].values.id, 'patient-a')
   assert.equal('email' in calls[1].values, false)
   await assert.rejects(repository.saveHabit(localDate(), 'invalid', true))
+})
+
+test('database load errors never fall back to synthetic records', async () => {
+  const error = new Error('Backend unavailable')
+  for (const table of ['profiles', 'metabolic_entries', 'habit_logs']) {
+    const { repository } = fixture(undefined, { errors: { [table]: error } })
+    await assert.rejects(repository.load(), (failure) => failure === error)
+  }
+})
+
+test('failed writes propagate the error and preserve caller input', async () => {
+  const error = new Error('Write failed')
+  const { repository } = fixture(undefined, {
+    errors: {
+      metabolic_entries: error,
+      habit_logs: error,
+      profiles: error,
+    },
+  })
+  const values = { entry_date: localDate(), weight_kg: '82,4' }
+  await assert.rejects(
+    repository.saveEntry(values),
+    (failure) => failure === error,
+  )
+  assert.deepEqual(values, { entry_date: localDate(), weight_kg: '82,4' })
+  await assert.rejects(
+    repository.saveHabit(localDate(), 'sleep', true),
+    (failure) => failure === error,
+  )
+  await assert.rejects(
+    repository.saveProfile({ full_name: 'Patient' }),
+    (failure) => failure === error,
+  )
+})
+
+test('old authenticated accounts create only their own missing profile', async () => {
+  const { repository, calls } = fixture(
+    { id: 'old-patient', email: 'old@example.invalid' },
+    { profile: null },
+  )
+  const data = await repository.load()
+  assert.equal(data.profile.id, 'old-patient')
+  assert.equal(data.profile.full_name, 'old')
+  assert.equal(calls[3].values.id, 'old-patient')
+  assert.equal(calls[3].options.onConflict, 'id')
+})
+
+test('reads have bounded history and reject an expired authenticated session', async () => {
+  const { repository, client, calls } = fixture()
+  await repository.load()
+  assert.equal(calls[1].minimum[0], 'entry_date')
+  assert.equal(calls[1].limit, 366)
+  assert.equal(calls[2].minimum[0], 'logged_at')
+  assert.equal(calls[2].limit, 1464)
+  assert.deepEqual(calls[1].order, ['entry_date', { ascending: false }])
+  client.auth.getUser = async () => ({
+    data: { user: { id: 'patient-a' } },
+    error: new Error('Expired'),
+  })
+  calls.length = 0
+  await assert.rejects(repository.load())
+  assert.equal(calls.length, 0)
 })

@@ -35,7 +35,7 @@ O resumo sai no terminal; capturas e rastros de falha ficam em `test-results/`, 
 pnpm test:public
 ```
 
-Confere `https://endo-plus.vercel.app`, páginas públicas, proteção de rotas e navegação da demonstração. Não cadastra usuários, não envia e-mails e não salva dados no Supabase. Os resultados usam `test-results-public/`, separado da suíte local.
+Confere `https://endo-plus.vercel.app`, páginas públicas, proteção de rotas, navegação da demonstração e retorno ao início após abrir um formulário protegido. Usa `node:test` e controla diretamente um navegador isolado, sem o executor de workers da suíte local. Não cadastra usuários, não envia e-mails e não salva dados no Supabase. O resumo sai no terminal e o navegador é fechado ao final.
 
 Para conferir outro deployment explicitamente:
 

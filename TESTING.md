@@ -127,6 +127,15 @@ quatro testes anteriores de isolamento e compartilhamento. As colunas opcionais
 permanecem na produção; as contas e medidas sintéticas são revertidas integralmente.
 Esses testes não constituem validação clínica nem teste de login real.
 
+## Integração clínica isolada
+
+`pnpm test:database` executa a estrutura da Fase 2 em PostgreSQL local embarcado,
+com contas sintéticas, verificando também os cinco contratos SQL anteriores.
+`pnpm test:integration` testa as telas com chamadas interceptadas e
+`VITE_CLINICAL_INTEGRATION_ENABLED=true`, sem usar o serviço real.
+Consulte [PHASE2_INTEGRATION.md](PHASE2_INTEGRATION.md) para as limitações: esta
+verificação não demonstra login real, PostgREST ou concorrência entre conexões.
+
 ## Compilação
 
 ```bash

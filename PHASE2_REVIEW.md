@@ -4,6 +4,13 @@ Esta entrega é uma simulação para revisão, não uma fase liberada para pacie
 Não foi aplicada nenhuma migração, alterada nenhuma configuração de produção ou
 conectado um novo formulário ao Supabase. A versão oficial permanece na Fase 1.
 
+Em 21/11/2026, o responsável confirmou a revisão clínica dos campos e limites,
+inclusive doses e intervalos, e a conferência em iPhone/Safari e Android/Chrome.
+Essa confirmação foi informada pelo responsável, não comprovada pelos testes
+automatizados. A preparação da integração foi autorizada, mas a publicação
+oficial continua exigindo outra autorização. Mudanças clínicas exigem nova revisão.
+O trabalho de integração está em [PHASE2_INTEGRATION.md](PHASE2_INTEGRATION.md).
+
 ## Como abrir
 
 ```bash
@@ -44,8 +51,10 @@ Se o navegador bloquear o armazenamento, funciona somente em memória.
 ## Limites e revisão obrigatória
 
 Os intervalos abaixo são barreiras provisórias de digitação, não faixas de
-normalidade nem uma lista de doses permitidas. Precisam de validação clínica
-antes de conectar contas reais. Nenhum deles gera diagnóstico ou alerta terapêutico.
+normalidade nem uma lista de doses permitidas. Foram apresentados ao responsável
+na revisão acima; isso não transforma os limites em recomendações de dose.
+Nenhum deles gera diagnóstico ou alerta terapêutico. Qualquer alteração futura
+precisa de nova validação antes de conectar contas reais.
 
 | Campo | Limite provisório |
 | --- | --- |

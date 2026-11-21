@@ -5,6 +5,11 @@ não usa RPCs clínicas e não grava no Supabase. Não executar o esquema inicia
 do projeto para implantar esta fase. Criar migração incremental somente após
 aprovar os campos e as regras, e testá-la primeiro fora da produção.
 
+A implementação incremental foi preparada em `supabase/phase2-clinical.sql`,
+sem aplicação ao projeto remoto. A revisão clínica e dos aparelhos foi confirmada
+pelo responsável em 21/11/2026. Os testes locais usam PostgreSQL embarcado e
+contas sintéticas; não equivalem à homologação do Supabase Auth/Data API.
+
 ## Estrutura proposta
 
 | Tabela | Campos principais e invariantes |
@@ -20,8 +25,11 @@ aprovar os campos e as regras, e testá-la primeiro fora da produção.
 | `thyroid_intakes` | paciente, instante e jejum explicitamente sim/não/não informado |
 | `blood_pressure_readings` | paciente, instante, sistólica, diastólica e pulso opcional |
 
-Cada registro terá UUID e chave de idempotência por paciente para repetição de
-envio, data de criação/atualização e versão para evitar edição concorrente.
+Cada registro tem UUID, chave de idempotência por paciente/tipo para repetição de
+envio, data de criação e referência à versão imutável do módulo. Nesta integração
+inicial, registros inseridos são imutáveis pela API: a correção auditável ainda
+precisa de implementação antes de ampliar o piloto. Configurações usam comparação
+da versão esperada para impedir sobrescrita concorrente.
 Índices por `(patient_id, occurred_at desc, id)` ou data do exame servirão à
 paginação do histórico. Configurações usarão unicidade paciente/módulo;
 versões terão unicidade configuração/revisão. Campos clínicos serão tipados,

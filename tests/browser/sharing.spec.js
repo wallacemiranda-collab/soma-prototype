@@ -1,13 +1,14 @@
 import { test, expect } from './fixture.js'
 import { localDate } from '../../src/lib/patientData.js'
 
-function seedDoctor(ui, index = 2) {
+function seedDoctor(ui, index = 2, details = {}) {
   const profile = {
     user_id: ui.identities[index].id,
     professional_name: ui.identities[index].name,
     crm: '12345',
     crm_state: 'SP',
     share_code: index === 2 ? 'ABCDEF1234567890' : '1234567890ABCDEF',
+    ...details,
   }
   ui.accounts.get(profile.user_id).doctorProfile = profile
   ui.codeReservations.set(profile.share_code, profile.user_id)
@@ -19,18 +20,21 @@ test('doctor registers, patient authorizes, and the shared history is read-only'
   ui,
 }, testInfo) => {
   await page.goto('/')
-  await page.getByRole('link', { name: /^Sou médico/ }).click()
+  await page.getByRole('link', { name: /^Sou profissional de saúde/ }).click()
   await expect(
-    page.getByRole('button', { name: 'Sou médico', exact: true }),
+    page.getByRole('button', {
+      name: 'Sou profissional de saúde',
+      exact: true,
+    }),
   ).toHaveAttribute('aria-pressed', 'true')
   await ui.login(2, 'doctor')
   await expect(
     page.getByRole('heading', { name: 'Cadastro profissional' }),
   ).toBeVisible()
   await page.getByLabel('Nome profissional').fill('Dra. Carla teste')
-  await page.getByLabel('Número do CRM').fill('12345')
-  await page.getByLabel('UF do CRM').selectOption('SP')
-  await page.getByLabel(/^Declaro que sou médico/).check()
+  await page.getByLabel('Registro profissional', { exact: true }).fill('12345')
+  await page.getByLabel('UF do registro').selectOption('SP')
+  await page.getByLabel(/^Declaro que sou profissional de saúde/).check()
   await page
     .getByRole('button', { name: 'Concluir cadastro profissional' })
     .click()
@@ -46,8 +50,8 @@ test('doctor registers, patient authorizes, and the shared history is read-only'
   await expect(page.getByRole('status')).toContainText('Registro salvo')
   await page.getByRole('link', { name: 'Evolução', exact: true }).click()
   await page.getByRole('link', { name: 'Compartilhar evolução' }).click()
-  await page.getByLabel('Código do médico').fill('ABCDEF1234567890')
-  await page.getByRole('button', { name: 'Buscar médico' }).click()
+  await page.getByLabel('Código do profissional').fill('ABCDEF1234567890')
+  await page.getByRole('button', { name: 'Buscar profissional' }).click()
   await expect(
     page.getByText('Dra. Carla teste', { exact: true }),
   ).toBeVisible()
@@ -55,7 +59,7 @@ test('doctor registers, patient authorizes, and the shared history is read-only'
     page.getByRole('button', { name: 'Autorizar acesso' }),
   ).toBeDisabled()
   await page.getByLabel('Prazo de acesso').selectOption('7')
-  await page.getByLabel(/^Autorizo este médico/).check()
+  await page.getByLabel(/^Autorizo este profissional/).check()
   await page.getByRole('button', { name: 'Autorizar acesso' }).click()
   await expect(
     page.getByRole('status').filter({ hasText: 'Autorização salva' }),
@@ -146,13 +150,13 @@ test('doctor personalizes the code, keeps existing patients and is found by the 
   await page.getByRole('button', { name: 'Sair da conta', exact: true }).click()
   await ui.login()
   await page.goto('/compartilhar')
-  await page.getByLabel('Código do médico').fill(doctor.share_code)
-  await page.getByRole('button', { name: 'Buscar médico' }).click()
+  await page.getByLabel('Código do profissional').fill(doctor.share_code)
+  await page.getByRole('button', { name: 'Buscar profissional' }).click()
   await expect(page.getByRole('alert')).toContainText(
-    'Nenhum médico encontrado',
+    'Nenhum profissional encontrado',
   )
-  await page.getByLabel('Código do médico').fill('dr wallace')
-  await page.getByRole('button', { name: 'Buscar médico' }).click()
+  await page.getByLabel('Código do profissional').fill('dr wallace')
+  await page.getByRole('button', { name: 'Buscar profissional' }).click()
   await expect(
     page.getByRole('button', { name: 'Autorizar acesso' }),
   ).toBeVisible()
@@ -235,25 +239,56 @@ test('failed code updates preserve the draft and can be retried safely', async (
   ).toEqual([])
 })
 
-test('patient may authorize multiple doctors and revoke one without affecting the other', async ({
+test('patient may authorize two doctors and other professions, renew and revoke independently', async ({
   page,
   ui,
-}) => {
+}, testInfo) => {
   const first = seedDoctor(ui)
   const second = seedDoctor(ui, 3)
+  const nutritionist = seedDoctor(ui, 4, {
+    profession: 'Nutrição',
+    council: 'CRN',
+    crm: '12345/N',
+    share_code: 'NUTRITESTE',
+  })
+  const psychologist = seedDoctor(ui, 5, {
+    profession: 'Psicologia',
+    council: 'CRP',
+    crm: '06/12345',
+    share_code: 'PSITESTE',
+  })
   await ui.login()
   await page.getByRole('link', { name: 'Perfil', exact: true }).click()
-  await page.getByRole('link', { name: 'Compartilhar com médicos' }).click()
-  for (const doctor of [first, second]) {
-    await page.getByLabel('Código do médico').fill(doctor.share_code)
-    await page.getByRole('button', { name: 'Buscar médico' }).click()
-    await page.getByLabel(/^Autorizo este médico/).check()
+  await page.getByRole('link', { name: 'Minha equipe de saúde' }).click()
+  for (const doctor of [first, second, nutritionist, psychologist, first]) {
+    await page.getByLabel('Código do profissional').fill(doctor.share_code)
+    await page.getByRole('button', { name: 'Buscar profissional' }).click()
+    await page.getByLabel(/^Autorizo este profissional/).check()
     await page.getByRole('button', { name: 'Autorizar acesso' }).click()
     await expect(
       page.getByRole('status').filter({ hasText: 'Autorização salva' }),
     ).toBeVisible()
   }
-  expect(ui.shares.size).toBe(2)
+  expect(ui.shares.size).toBe(4)
+  await page.reload()
+  const region = page.getByRole('region', { name: 'Meus compartilhamentos' })
+  await expect(region.getByRole('heading', { level: 3 })).toHaveCount(4)
+  await expect(
+    region.getByText('Nutrição · CRN 12345/N/SP', { exact: true }),
+  ).toBeVisible()
+  await expect(
+    region.getByText('Psicologia · CRP 06/12345/SP', { exact: true }),
+  ).toBeVisible()
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true)
+  await page.screenshot({
+    path: testInfo.outputPath('health-team.png'),
+    fullPage: true,
+  })
   const firstCard = page
     .getByRole('region', { name: 'Meus compartilhamentos' })
     .locator('section')
@@ -271,6 +306,93 @@ test('patient may authorize multiple doctors and revoke one without affecting th
   expect(
     ui.shares.get(`${ui.identities[0].id}:${second.user_id}`).revoked_at,
   ).toBeNull()
+  for (const professional of [nutritionist, psychologist]) {
+    expect(
+      ui.shares.get(`${ui.identities[0].id}:${professional.user_id}`)
+        .revoked_at,
+    ).toBeNull()
+  }
+  await page.getByRole('link', { name: 'Perfil', exact: true }).click()
+  await page.getByRole('button', { name: 'Sair da conta', exact: true }).click()
+  await ui.login(4, 'doctor')
+  await page.getByRole('link', { name: 'Ver evolução' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Ana teste', exact: true }),
+  ).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Editar registro' })).toHaveCount(
+    0,
+  )
+})
+
+test('nutritionist registers, personalizes a code and receives only patient-authorized access', async ({
+  page,
+  ui,
+}, testInfo) => {
+  await page.goto('/login?acesso=profissional')
+  await expect(
+    page.getByRole('button', {
+      name: 'Sou profissional de saúde',
+      exact: true,
+    }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await ui.login(3, 'doctor')
+  await page.getByLabel('Nome profissional').fill('Nutricionista teste')
+  await page.getByLabel('Profissão', { exact: true }).fill('Nutrição')
+  await page
+    .getByLabel('Registro profissional', { exact: true })
+    .fill('12345/N')
+  await page.getByLabel('UF do registro').selectOption('SP')
+  await page.getByLabel(/^Declaro que sou profissional de saúde/).check()
+  await page
+    .getByRole('button', { name: 'Concluir cadastro profissional' })
+    .click()
+  await expect(page.getByRole('alert')).toContainText('Para o CRM')
+  expect(
+    ui.requests.filter(
+      (r) => r.table === 'doctor_profiles' && r.method === 'POST',
+    ),
+  ).toHaveLength(0)
+  await page.getByLabel('Conselho ou órgão de registro').fill('crn')
+  await page
+    .getByRole('button', { name: 'Concluir cadastro profissional' })
+    .click()
+  await expect(page.getByText(/Nutrição · CRN 12345\/N\/SP/)).toBeVisible()
+  await expect(page.getByText(/Nenhum paciente autorizou/)).toBeVisible()
+  await page.getByLabel('Meu código profissional').fill('NUTRITESTE')
+  await page.getByRole('button', { name: 'Salvar código' }).click()
+  await expect(page.getByRole('status')).toContainText('Código atualizado')
+  await page.reload()
+  await expect(page.getByLabel('Meu código profissional')).toHaveValue(
+    'NUTRITESTE',
+  )
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.screenshot({
+    path: testInfo.outputPath('nutritionist-code.png'),
+    fullPage: true,
+  })
+  await page.getByRole('button', { name: 'Sair da conta', exact: true }).click()
+  await ui.login()
+  await page.goto('/compartilhar')
+  await page.getByLabel('Código do profissional').fill('nutri teste')
+  await page.getByRole('button', { name: 'Buscar profissional' }).click()
+  await expect(
+    page.getByText('Nutrição · CRN 12345/N/SP', { exact: true }),
+  ).toBeVisible()
+  expect(ui.shares.size).toBe(0)
+  await expect(
+    page.getByRole('button', { name: 'Autorizar acesso' }),
+  ).toBeDisabled()
+  await page.getByLabel(/^Autorizo este profissional/).check()
+  await page.getByRole('button', { name: 'Autorizar acesso' }).click()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Autorização salva' }),
+  ).toBeVisible()
+  expect(ui.shares.size).toBe(1)
+  expect(ui.accounts.get(ui.identities[3].id).doctorProfile).toMatchObject({
+    profession: 'Nutrição',
+    council: 'CRN',
+    crm: '12345/N',
+  })
 })
 
 test('unauthorized doctor cannot open a guessed patient URL or another patient list', async ({
@@ -300,9 +422,9 @@ test('failed grants and revocations do not claim success', async ({
   const doctor = seedDoctor(ui)
   await ui.login()
   await page.goto('/compartilhar')
-  await page.getByLabel('Código do médico').fill(doctor.share_code)
-  await page.getByRole('button', { name: 'Buscar médico' }).click()
-  await page.getByLabel(/^Autorizo este médico/).check()
+  await page.getByLabel('Código do profissional').fill(doctor.share_code)
+  await page.getByRole('button', { name: 'Buscar profissional' }).click()
+  await page.getByLabel(/^Autorizo este profissional/).check()
   ui.failNext('endo_grant_doctor_access')
   await page.getByRole('button', { name: 'Autorizar acesso' }).click()
   await expect(page.getByRole('alert')).toContainText(

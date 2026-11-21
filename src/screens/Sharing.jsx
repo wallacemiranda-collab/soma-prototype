@@ -8,7 +8,11 @@ import {
   SelectField,
 } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
-import { sharingDeadline, sharingStatus } from '../lib/sharing'
+import {
+  sharingDeadline,
+  sharingStatus,
+  professionalIdentity,
+} from '../lib/sharing'
 import { sharingRepository } from '../services/sharingService'
 
 export default function Sharing() {
@@ -60,14 +64,14 @@ export default function Sharing() {
       const doctor = await sharingRepository.lookupDoctor(code)
       if (!doctor)
         throw new Error(
-          'Nenhum médico encontrado. Confira o código e peça que ele conclua o cadastro profissional.',
+          'Nenhum profissional encontrado. Confira o código e peça que ele conclua o cadastro profissional.',
         )
       setSelected(doctor)
     } catch (failure) {
       setError(
         failure instanceof Error
           ? failure.message
-          : 'Não foi possível buscar o médico.',
+          : 'Não foi possível buscar o profissional.',
       )
     } finally {
       setPending(false)
@@ -86,7 +90,7 @@ export default function Sharing() {
         confirmed,
       })
       setMessage(
-        'Autorização salva. O médico poderá consultar sua evolução durante o prazo escolhido.',
+        'Autorização salva. O profissional poderá consultar sua evolução durante o prazo escolhido. Você pode adicionar outros profissionais pelo código.',
       )
       setSelected(null)
       setCode('')
@@ -115,7 +119,7 @@ export default function Sharing() {
         ),
       )
       setMessage(
-        'Acesso revogado. Novas consultas aos seus dados estão bloqueadas para este médico.',
+        'Acesso revogado. Novas consultas aos seus dados estão bloqueadas para este profissional. Os demais acessos não foram alterados.',
       )
     } catch {
       setError('Não foi possível revogar o acesso. Tente novamente.')
@@ -126,26 +130,28 @@ export default function Sharing() {
   return (
     <>
       <AppHeader
-        title="Compartilhar com médicos"
+        title="Minha equipe de saúde"
         subtitle="Você escolhe quem acompanha sua evolução"
         simple
       />
       <MetabolicCard>
         <p className="text-sm leading-6 text-soma-600">
-          Qualquer médico com uma conta profissional no Endo + pode receber sua
-          autorização. O acesso é somente para leitura do seu nome, nascimento,
-          sexo, objetivos, medidas e hábitos, incluindo registros futuros
-          enquanto a autorização estiver ativa.
+          Adicione vários médicos e outros profissionais de saúde, um por vez,
+          usando o código de cada um. Você autoriza e revoga cada acesso de
+          forma independente. O acesso é somente para leitura do seu nome,
+          nascimento, sexo, objetivos, medidas e hábitos, incluindo registros
+          futuros enquanto a autorização estiver ativa.
         </p>
         {isDemo && (
           <p className="mt-4 rounded-xl bg-soma-100 p-3 text-sm">
             A demonstração não compartilha dados. Entre com sua conta para
-            autorizar um médico.
+            autorizar um profissional.
           </p>
         )}
         <form onSubmit={lookup} className="mt-5 space-y-4">
+          <h2 className="font-semibold">Adicionar profissional por código</h2>
           <FormField
-            label="Código do médico"
+            label="Código do profissional"
             value={code}
             autoComplete="off"
             maxLength={48}
@@ -158,7 +164,7 @@ export default function Sharing() {
             }}
           />
           <PrimaryButton type="submit" disabled={pending || isDemo}>
-            {pending ? 'Aguarde...' : 'Buscar médico'}
+            {pending ? 'Aguarde...' : 'Buscar profissional'}
           </PrimaryButton>
         </form>
         {selected && (
@@ -167,13 +173,16 @@ export default function Sharing() {
             className="mt-5 space-y-4 border-t border-soma-100 pt-5"
           >
             <div>
-              <h2 className="font-semibold">{selected.professional_name}</h2>
-              <p className="mt-1 text-sm text-soma-600">
-                CRM informado: {selected.crm}/{selected.crm_state}
+              <h2 className="break-words font-semibold">
+                {selected.professional_name}
+              </h2>
+              <p className="mt-1 break-words text-sm text-soma-600">
+                {professionalIdentity(selected)}
               </p>
               <p className="mt-2 text-xs leading-5 text-soma-600">
-                Cadastro declarado, sem verificação automática de CRM. Confirme
-                estes dados diretamente com seu médico antes de autorizar.
+                Cadastro declarado, sem verificação automática do registro.
+                Confirme estes dados diretamente com o profissional antes de
+                autorizar.
               </p>
             </div>
             <SelectField
@@ -199,7 +208,7 @@ export default function Sharing() {
                 disabled={pending}
                 onChange={(event) => setConfirmed(event.target.checked)}
               />
-              Autorizo este médico a consultar meu perfil e minha evolução
+              Autorizo este profissional a consultar meu perfil e minha evolução
               durante o prazo selecionado. Posso revogar o acesso a qualquer
               momento.
             </label>
@@ -213,15 +222,17 @@ export default function Sharing() {
         <Feedback error={error} message={message} />
       </div>
       <section className="mt-7 space-y-3" aria-label="Meus compartilhamentos">
-        <h2 className="text-lg font-semibold">Meus médicos</h2>
+        <h2 className="text-lg font-semibold">Meus profissionais</h2>
         {loading ? (
           <p role="status">Carregando compartilhamentos...</p>
         ) : doctors.length ? (
           doctors.map((doctor) => (
             <MetabolicCard key={doctor.doctor_id}>
-              <h3 className="font-semibold">{doctor.professional_name}</h3>
-              <p className="mt-1 text-sm text-soma-600">
-                CRM informado: {doctor.crm}/{doctor.crm_state}
+              <h3 className="break-words font-semibold">
+                {doctor.professional_name}
+              </h3>
+              <p className="mt-1 break-words text-sm text-soma-600">
+                {professionalIdentity(doctor)}
               </p>
               <p className="mt-3 text-sm font-semibold">
                 {sharingStatus(doctor)}
@@ -243,7 +254,8 @@ export default function Sharing() {
           ))
         ) : (
           <p className="text-sm text-soma-600">
-            Nenhum médico autorizado por você.
+            Nenhum profissional autorizado por você. Adicione o primeiro pelo
+            código acima.
           </p>
         )}
         {!isDemo && (

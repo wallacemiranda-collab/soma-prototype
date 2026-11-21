@@ -50,6 +50,7 @@ describe('published Endo +', { timeout: 90000 }, () => {
       '/perfil',
       '/compartilhar',
       '/medico',
+      '/profissional',
       '/auth/callback',
       '/redefinir-senha',
     ]) {
@@ -66,7 +67,18 @@ describe('published Endo +', { timeout: 90000 }, () => {
     await page.goto(base + '/medico')
     await expect(page).toHaveURL(/\/login$/)
     await expect(
-      page.getByRole('button', { name: 'Sou médico', exact: true }),
+      page.getByRole('button', {
+        name: 'Sou profissional de saúde',
+        exact: true,
+      }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    await page.goto(base + '/profissional')
+    await expect(page).toHaveURL(/\/login$/)
+    await expect(
+      page.getByRole('button', {
+        name: 'Sou profissional de saúde',
+        exact: true,
+      }),
     ).toHaveAttribute('aria-pressed', 'true')
   })
 
@@ -127,15 +139,15 @@ describe('published Endo +', { timeout: 90000 }, () => {
       page.getByRole('link', { name: /^Sou paciente/ }),
     ).toHaveAttribute('href', '/login?acesso=paciente')
     await expect(
-      page.getByRole('link', { name: /^Sou médico/ }),
-    ).toHaveAttribute('href', '/login?acesso=medico')
+      page.getByRole('link', { name: /^Sou profissional de saúde/ }),
+    ).toHaveAttribute('href', '/login?acesso=profissional')
     await page.goto(base + '/login?acesso=paciente')
     await page.getByRole('button', { name: 'Explorar demonstração' }).click()
     await page.getByRole('link', { name: 'Evolução', exact: true }).click()
     await page.getByRole('link', { name: 'Compartilhar evolução' }).click()
-    await expect(page.getByLabel('Código do médico')).toBeDisabled()
+    await expect(page.getByLabel('Código do profissional')).toBeDisabled()
     await expect(
-      page.getByRole('button', { name: 'Buscar médico' }),
+      page.getByRole('button', { name: 'Buscar profissional' }),
     ).toBeDisabled()
     assert.deepEqual(writes, [])
     assert.deepEqual(errors, [])

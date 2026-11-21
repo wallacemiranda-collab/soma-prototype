@@ -9,7 +9,7 @@ import {
   SelectField,
 } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
-import { states, sharingDeadline } from '../lib/sharing'
+import { states, sharingDeadline, professionalIdentity } from '../lib/sharing'
 import { sharingRepository } from '../services/sharingService'
 
 export default function DoctorDashboard() {
@@ -17,6 +17,8 @@ export default function DoctorDashboard() {
   const { user } = useAuth()
   const [values, setValues] = useState({
     professional_name: user.user_metadata?.full_name ?? '',
+    profession: 'Medicina',
+    council: 'CRM',
     crm: '',
     crm_state: '',
     confirmed: false,
@@ -120,17 +122,49 @@ export default function DoctorDashboard() {
               }
             />
             <FormField
-              label="Número do CRM"
-              value={values.crm}
-              inputMode="numeric"
-              pattern="[0-9]{1,10}"
+              label="Profissão"
+              list="health-professions"
+              value={values.profession}
               required
-              maxLength={10}
+              maxLength={80}
+              disabled={pending}
+              onChange={(event) => change('profession', event.target.value)}
+            />
+            <datalist id="health-professions">
+              {[
+                'Medicina',
+                'Nutrição',
+                'Psicologia',
+                'Fisioterapia',
+                'Enfermagem',
+                'Educação física',
+                'Terapia ocupacional',
+                'Fonoaudiologia',
+                'Farmácia',
+                'Odontologia',
+              ].map((profession) => (
+                <option key={profession} value={profession} />
+              ))}
+            </datalist>
+            <FormField
+              label="Conselho ou órgão de registro"
+              placeholder="Ex.: CRM, CRN, CRP, CREFITO"
+              value={values.council}
+              required
+              maxLength={20}
+              disabled={pending}
+              onChange={(event) => change('council', event.target.value)}
+            />
+            <FormField
+              label="Registro profissional"
+              value={values.crm}
+              required
+              maxLength={30}
               disabled={pending}
               onChange={(event) => change('crm', event.target.value)}
             />
             <SelectField
-              label="UF do CRM"
+              label="UF do registro"
               value={values.crm_state}
               required
               disabled={pending}
@@ -150,13 +184,14 @@ export default function DoctorDashboard() {
                 onChange={(event) => change('confirmed', event.target.checked)}
                 className="mt-1 h-5 w-5 shrink-0"
               />
-              Declaro que sou médico e que os dados profissionais informados são
-              verdadeiros.
+              Declaro que sou profissional de saúde e que meus dados e meu
+              registro profissional são verdadeiros.
             </label>
             <p className="text-xs leading-5 text-soma-600">
-              Cadastro declarado: o Endo + ainda não verifica o CRM
-              automaticamente. Nome e CRM não poderão ser alterados diretamente
-              após o cadastro. O código para pacientes poderá ser personalizado.
+              Cadastro declarado: o Endo + ainda não verifica o registro
+              automaticamente. Nome, profissão e registro não poderão ser
+              alterados diretamente após o cadastro. O código para pacientes
+              poderá ser personalizado.
             </p>
             <Feedback error={error} />
             <PrimaryButton type="submit" disabled={pending}>
@@ -174,9 +209,8 @@ export default function DoctorDashboard() {
   return (
     <>
       <h1 className="text-2xl font-semibold">Meus pacientes</h1>
-      <p className="mt-2 text-sm text-soma-600">
-        {profile.professional_name} · CRM informado {profile.crm}/
-        {profile.crm_state}
+      <p className="mt-2 break-words text-sm text-soma-600">
+        {profile.professional_name} · {professionalIdentity(profile)}
       </p>
       <MetabolicCard className="my-6">
         <h2 className="font-semibold">Seu código para os pacientes</h2>
@@ -249,7 +283,7 @@ export default function DoctorDashboard() {
           para os próximos compartilhamentos.
         </p>
         <p className="mt-2 text-xs text-soma-600">
-          Cadastro declarado, sem validação automática de CRM. O código não
+          Cadastro declarado, sem validação automática do registro. O código não
           concede acesso sem a autorização do paciente.
         </p>
       </MetabolicCard>
@@ -284,7 +318,7 @@ export default function DoctorDashboard() {
                   : 'Até o paciente revogar'}
               </p>
               <Link
-                to={`/medico/pacientes/${patient.patient_id}`}
+                to={`/profissional/pacientes/${patient.patient_id}`}
                 className="mt-4 inline-block rounded-xl bg-soma-100 px-4 py-3 text-sm font-semibold text-soma-800"
               >
                 Ver evolução

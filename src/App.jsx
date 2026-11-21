@@ -48,6 +48,11 @@ export default function App() {
             <Route path="/compartilhar" element={<Sharing />} />
           </Route>
           <Route element={<DoctorShell />}>
+            <Route path="/profissional" element={<DoctorDashboard />} />
+            <Route
+              path="/profissional/pacientes/:patientId"
+              element={<DoctorPatient />}
+            />
             <Route path="/medico" element={<DoctorDashboard />} />
             <Route
               path="/medico/pacientes/:patientId"

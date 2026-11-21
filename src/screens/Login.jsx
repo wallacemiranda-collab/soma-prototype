@@ -30,12 +30,13 @@ export default function Login() {
       : 'signin',
   )
   const requested = location.state?.from?.pathname
-  const requestedDoctor = /^\/medico(?:\/pacientes\/[a-f0-9-]+)?$/.test(
-    requested ?? '',
-  )
+  const requestedDoctor =
+    /^\/(?:medico|profissional)(?:\/pacientes\/[a-f0-9-]+)?$/.test(
+      requested ?? '',
+    )
   const selection = new URLSearchParams(location.search).get('acesso')
   const selectedMode =
-    requestedDoctor || selection === 'medico'
+    requestedDoctor || ['medico', 'profissional'].includes(selection)
       ? 'doctor'
       : selection === 'paciente' || requested
         ? 'patient'
@@ -60,7 +61,7 @@ export default function Login() {
     : requestedDoctor
       ? requested
       : selectedMode === 'doctor'
-        ? '/medico'
+        ? '/profissional'
         : '/home'
 
   if (!isLoading && isAuthenticated)
@@ -157,7 +158,7 @@ export default function Login() {
             <div className="grid grid-cols-2 gap-3">
               {[
                 ['patient', 'Sou paciente', 'paciente'],
-                ['doctor', 'Sou médico', 'medico'],
+                ['doctor', 'Sou profissional de saúde', 'profissional'],
               ].map(([value, label, query]) => (
                 <button
                   key={value}

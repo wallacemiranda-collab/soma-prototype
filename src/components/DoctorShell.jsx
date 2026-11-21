@@ -38,7 +38,7 @@ function Workspace() {
         }
       })
       .catch(() => {
-        if (active) setError('Não foi possível carregar a área médica.')
+        if (active) setError('Não foi possível carregar a área profissional.')
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -54,7 +54,7 @@ function Workspace() {
       const result = await signOut()
       if (result.error) throw result.error
       setAccessMode('doctor')
-      navigate('/login?acesso=medico', { replace: true })
+      navigate('/login?acesso=profissional', { replace: true })
     } catch {
       setError('Não foi possível sair. Tente novamente.')
       setPending(false)
@@ -64,14 +64,14 @@ function Workspace() {
     <div className="app-backdrop min-h-dvh">
       <main className="mx-auto min-h-dvh max-w-4xl bg-mist px-5 py-6 sm:px-8">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to="/medico" aria-label="Endo +, área médica">
+          <Link to="/profissional" aria-label="Endo +, área profissional">
             <BrandMark compact />
           </Link>
           <nav
-            aria-label="Navegação médica"
+            aria-label="Navegação profissional"
             className="flex flex-wrap items-center gap-4 text-sm font-semibold text-soma-700"
           >
-            <Link to="/medico">Meus pacientes</Link>
+            <Link to="/profissional">Meus pacientes</Link>
             <Link to="/home" onClick={() => setAccessMode('patient')}>
               Área do paciente
             </Link>
@@ -83,7 +83,7 @@ function Workspace() {
         {isDemo ? (
           <Feedback message="A demonstração não permite cadastro profissional nem acesso a pacientes. Entre com sua conta para continuar." />
         ) : loading ? (
-          <p role="status">Carregando área médica...</p>
+          <p role="status">Carregando área profissional...</p>
         ) : error ? (
           <>
             <Feedback error={error} />

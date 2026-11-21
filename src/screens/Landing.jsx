@@ -97,10 +97,10 @@ export default function Landing() {
               </span>
             </Link>
             <Link
-              to="/login?acesso=medico"
+              to="/login?acesso=profissional"
               className="rounded-2xl bg-soma-800 p-4 font-semibold text-white shadow-card"
             >
-              Sou médico
+              Sou profissional de saúde
               <span className="mt-2 block text-xs font-normal leading-5 text-soma-100">
                 Pacientes que autorizaram meu acesso
               </span>

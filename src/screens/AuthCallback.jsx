@@ -16,7 +16,10 @@ export default function AuthCallback() {
     )
   if (!failed && isAuthenticated && !isDemo)
     return (
-      <Navigate to={accessMode === 'doctor' ? '/medico' : '/home'} replace />
+      <Navigate
+        to={accessMode === 'doctor' ? '/profissional' : '/home'}
+        replace
+      />
     )
   return (
     <main className="mx-auto min-h-dvh max-w-[430px] bg-mist px-6 py-10">

@@ -22,6 +22,16 @@ const identities = [
     name: 'Daniel teste',
     email: 'daniel@example.invalid',
   },
+  {
+    id: '7d7985af-5730-4b78-8054-cb0289b5776e',
+    name: 'Eva teste',
+    email: 'eva@example.invalid',
+  },
+  {
+    id: '1f7e9038-2309-4a30-9b22-22f4624e9b11',
+    name: 'Fabi teste',
+    email: 'fabi@example.invalid',
+  },
 ]
 
 export const test = base.extend({
@@ -138,7 +148,7 @@ export const test = base.extend({
       if (url.pathname === '/auth/v1/recover') return reply({})
       if (url.pathname.startsWith('/rest/v1/rpc/')) {
         requests.push({ table, method, values: structuredClone(payload) })
-        if (table === 'endo_lookup_doctor') {
+        if (table === 'endo_lookup_professional') {
           const profile = [...accounts.values()]
             .map((account) => account.doctorProfile)
             .find((doctor) => doctor?.share_code === payload.p_code)
@@ -148,6 +158,8 @@ export const test = base.extend({
                   {
                     doctor_id: profile.user_id,
                     professional_name: profile.professional_name,
+                    profession: profile.profession ?? 'Medicina',
+                    council: profile.council ?? 'CRM',
                     crm: profile.crm,
                     crm_state: profile.crm_state,
                   },
@@ -155,11 +167,13 @@ export const test = base.extend({
               : [],
           )
         }
-        if (table === 'endo_my_doctors')
+        if (table === 'endo_my_professionals')
           return reply(
             [...shares.values()]
               .filter((share) => share.patient_id === active.id)
               .map((share) => ({
+                profession: 'Medicina',
+                council: 'CRM',
                 ...share,
                 ...accounts.get(share.doctor_id).doctorProfile,
               })),

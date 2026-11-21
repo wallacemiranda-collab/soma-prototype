@@ -33,15 +33,38 @@ export function validateDoctorProfile(values) {
     typeof values.professional_name === 'string'
       ? values.professional_name.trim()
       : ''
-  const crm = typeof values.crm === 'string' ? values.crm.trim() : ''
+  const profession =
+    typeof values.profession === 'string'
+      ? values.profession.trim()
+      : values.profession === undefined
+        ? 'Medicina'
+        : ''
+  const council =
+    typeof values.council === 'string'
+      ? values.council.trim().toUpperCase()
+      : values.council === undefined
+        ? 'CRM'
+        : ''
+  const crm =
+    typeof values.crm === 'string' ? values.crm.trim().toUpperCase() : ''
   const crm_state = String(values.crm_state ?? '').toUpperCase()
   if (professional_name.length < 2 || professional_name.length > 100)
     throw new Error('Informe seu nome profissional, com até 100 caracteres.')
-  if (!/^\d{1,10}$/.test(crm) || !states.includes(crm_state))
-    throw new Error('Informe o número do CRM e selecione a UF.')
+  if (profession.length < 2 || profession.length > 80)
+    throw new Error('Informe sua profissão, com até 80 caracteres.')
+  if (!/^[A-Z][A-Z0-9-]{1,19}$/.test(council))
+    throw new Error('Informe a sigla do conselho ou órgão de registro.')
+  if (!/^[A-Z0-9][A-Z0-9./ -]{0,29}$/.test(crm) || !states.includes(crm_state))
+    throw new Error('Informe seu registro profissional e selecione a UF.')
+  if (council === 'CRM' && !/^\d{1,10}$/.test(crm))
+    throw new Error('Para o CRM, informe somente o número, com até 10 dígitos.')
   if (values.confirmed !== true)
     throw new Error('Confirme a declaração do cadastro profissional.')
-  return { professional_name, crm, crm_state }
+  return { professional_name, profession, council, crm, crm_state }
+}
+
+export function professionalIdentity(profile) {
+  return `${profile.profession ?? 'Medicina'} · ${profile.council ?? 'CRM'} ${profile.crm}/${profile.crm_state}`
 }
 
 export function normalizeDoctorCode(value) {
@@ -57,7 +80,7 @@ export function validateSharing(values) {
     typeof values.doctor_id !== 'string' ||
     !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(values.doctor_id)
   )
-    throw new Error('Selecione um médico antes de autorizar.')
+    throw new Error('Selecione um profissional antes de autorizar.')
   if (values.confirmed !== true)
     throw new Error('Confirme a autorização para compartilhar sua evolução.')
   if (

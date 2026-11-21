@@ -94,6 +94,15 @@ consulta pelo novo código e autorizações preservadas. A suíte de navegador
 confere salvar, cancelar, recarregar, falhas de rede, duplicidade, código
 personalizado na busca do paciente e layout em 320 px, com backend simulado.
 
+Após `supabase/health-professionals.sql`, execute
+`supabase/verify-health-professionals.sql`. Ele acrescenta nutricionista e
+psicólogo aos testes de dois médicos, sem usar dados de pacientes reais.
+Confere cadastro com conselho próprio, consulta por código, autorizações
+independentes, renovação sem duplicar, revogação, expiração e leitura sem
+escrita, com rollback integral. A suíte de interface também cobre a equipe com
+quatro profissionais, recarga, entrada profissional, cadastro não médico e
+personalização do código. Os links antigos `/medico` continuam cobertos.
+
 ## Compilação
 
 ```bash

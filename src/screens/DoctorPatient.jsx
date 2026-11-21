@@ -59,7 +59,7 @@ export default function DoctorPatient() {
   return (
     <>
       <Link
-        to="/medico"
+        to="/profissional"
         className="mb-6 inline-block py-2 text-sm font-semibold text-soma-700"
       >
         Voltar aos meus pacientes

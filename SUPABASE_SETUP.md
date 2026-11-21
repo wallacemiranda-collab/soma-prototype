@@ -55,6 +55,27 @@ para impedir reutilização por outra identidade. Não altere essas reservas pel
 frontend. `supabase/verify-doctor-codes.sql` testa edição, colisões, reservas,
 normalização, isolamento e preservação das autorizações, sempre com rollback.
 
+## Outros profissionais de saúde
+
+Depois dos scripts anteriores, aplique uma vez `supabase/health-professionals.sql`.
+Ele adiciona profissão e conselho ao cadastro, com padrões Medicina e CRM para
+cadastros existentes. Os nomes internos `crm`, `crm_state` e `doctor_id` são
+mantidos por compatibilidade. O CRM continua numérico; outros registros aceitam
+até 30 caracteres, com letras, números, ponto, barra, espaço e hífen.
+Nenhum código ou autorização existente é alterado.
+
+Nome, profissão, conselho e registro são imutáveis pela API após o cadastro;
+só o código permanece editável. Os RPCs `endo_lookup_professional` e
+`endo_my_professionals` incluem profissão e conselho sem diretório público.
+Cada acesso depende de confirmação individual do paciente. O registro é
+autodeclarado, sem validação automática pelo conselho.
+
+Execute `supabase/verify-health-professionals.sql` para conferir dois médicos,
+nutricionista e psicólogo, renovação sem duplicar, revogação e expiração
+independentes, isolamento e proibição de escrita. As contas sintéticas são
+integralmente revertidas. Resultado: `health_professionals_passed`. Execute
+também os três scripts de verificação anteriores para conferir compatibilidade.
+
 ## URLs dos e-mails de autenticação
 
 Em **Authentication > URL Configuration**, configure:

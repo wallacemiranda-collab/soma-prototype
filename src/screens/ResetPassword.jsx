@@ -24,7 +24,9 @@ export default function ResetPassword() {
     try {
       const result = await updatePassword(password)
       if (result.error) throw result.error
-      navigate(accessMode === 'doctor' ? '/medico' : '/home', { replace: true })
+      navigate(accessMode === 'doctor' ? '/profissional' : '/home', {
+        replace: true,
+      })
     } catch {
       setError(
         'Não foi possível alterar a senha. Solicite um novo link e tente novamente.',

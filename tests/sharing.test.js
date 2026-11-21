@@ -5,6 +5,7 @@ import {
   sharingStatus,
   validateDoctorProfile,
   validateSharing,
+  professionalIdentity,
 } from '../src/lib/sharing.js'
 import { createSharingRepository } from '../src/services/sharingRepository.js'
 
@@ -89,6 +90,8 @@ function fixture(options = {}) {
 test('professional registration validates CRM format and requires a declaration, not an invented verification', () => {
   assert.deepEqual(validateDoctorProfile(doctor), {
     professional_name: 'Dra. Teste',
+    profession: 'Medicina',
+    council: 'CRM',
     crm: '12345',
     crm_state: 'SP',
   })
@@ -121,6 +124,76 @@ test('doctor lookup uses an exact normalized code rather than a directory of pat
     'DR_TESTE',
   ])
     assert.throws(() => normalizeDoctorCode(value))
+})
+
+test('other health professions use their own council and registration without claiming verification', () => {
+  const profile = validateDoctorProfile({
+    ...doctor,
+    profession: ' Nutrição ',
+    council: ' crn-3 ',
+    crm: '12345/n',
+    verified: true,
+  })
+  assert.deepEqual(profile, {
+    professional_name: 'Dra. Teste',
+    profession: 'Nutrição',
+    council: 'CRN-3',
+    crm: '12345/N',
+    crm_state: 'SP',
+  })
+  assert.equal(professionalIdentity(profile), 'Nutrição · CRN-3 12345/N/SP')
+  assert.equal(professionalIdentity(doctor), 'Medicina · CRM 12345/SP')
+  for (const changes of [
+    { profession: '' },
+    { profession: null },
+    { profession: 'A'.repeat(81) },
+    { council: '' },
+    { council: {} },
+    { council: '<CRN>' },
+    { crm: '123@45' },
+    { crm: '1'.repeat(31) },
+  ])
+    assert.throws(() =>
+      validateDoctorProfile({
+        ...doctor,
+        profession: 'Nutrição',
+        council: 'CRN',
+        ...changes,
+      }),
+    )
+})
+
+test('professional lookups and lists use the generic RPCs and still validate the current session', async () => {
+  const { repository, calls } = fixture()
+  await repository.lookupDoctor(' nutri teste ')
+  await repository.listDoctors()
+  assert.deepEqual(calls, [
+    { name: 'endo_lookup_professional', params: { p_code: 'NUTRITESTE' } },
+    { name: 'endo_my_professionals', params: undefined },
+  ])
+  const missing = fixture({ noSession: true })
+  await assert.rejects(missing.repository.lookupDoctor('NUTRITESTE'))
+  assert.deepEqual(missing.calls, [])
+})
+
+test('non-medical registration writes only the declared professional identity and authenticated account', async () => {
+  const { repository, calls } = fixture()
+  await repository.registerDoctor({
+    ...doctor,
+    profession: 'Psicologia',
+    council: 'CRP',
+    crm: '06/12345',
+    user_id: patientId,
+    verified: true,
+  })
+  assert.deepEqual(calls[0].values, {
+    professional_name: doctor.professional_name,
+    profession: 'Psicologia',
+    council: 'CRP',
+    crm: '06/12345',
+    crm_state: 'SP',
+    user_id: doctorId,
+  })
 })
 
 test('code customization changes only the authenticated doctor code', async () => {
@@ -213,6 +286,8 @@ test('caller-controlled identity and verification fields never enter professiona
   })
   assert.deepEqual(calls[0].values, {
     professional_name: 'Dra. Teste',
+    profession: 'Medicina',
+    council: 'CRM',
     crm: '12345',
     crm_state: 'SP',
     user_id: doctorId,

@@ -29,11 +29,11 @@ export function createSharingRepository(client) {
   }
   return {
     async listDoctors() {
-      return (await rpc('endo_my_doctors')) ?? []
+      return (await rpc('endo_my_professionals')) ?? []
     },
     async lookupDoctor(value) {
       const code = normalizeDoctorCode(value)
-      const rows = await rpc('endo_lookup_doctor', { p_code: code })
+      const rows = await rpc('endo_lookup_professional', { p_code: code })
       return rows?.[0] ?? null
     },
     async grant(values) {

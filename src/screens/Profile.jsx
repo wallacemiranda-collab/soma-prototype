@@ -66,7 +66,7 @@ export default function Profile() {
         to="/compartilhar"
         className="mb-5 block rounded-2xl bg-soma-100 p-4 font-semibold text-soma-800"
       >
-        Compartilhar com médicos
+        Minha equipe de saúde
       </Link>
       <section className="mb-6 flex items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-soma-800 text-xl font-semibold text-white">
@@ -176,10 +176,10 @@ export default function Profile() {
       </button>
       {!isDemo && (
         <Link
-          to="/medico"
+          to="/profissional"
           className="mt-3 block py-3 text-center text-sm font-semibold text-soma-600"
         >
-          Acessar área médica
+          Acessar área profissional
         </Link>
       )}
     </>

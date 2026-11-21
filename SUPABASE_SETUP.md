@@ -78,8 +78,9 @@ também os três scripts de verificação anteriores para conferir compatibilida
 
 ## Altura e métricas da Fase 1
 
-Após a revisão clínica, aplique `supabase/phase1-height.sql` antes de publicar
-o frontend desta fase. O script acrescenta somente `height_cm`, opcional, em
+Após a revisão clínica e autorização do responsável, `supabase/phase1-height.sql`
+foi aplicado à produção em 21/11/2026, como migração `phase1_height_reference`.
+O script acrescenta somente `height_cm`, opcional, em
 `profiles` e `metabolic_entries`, com limites técnicos de 30 a 300 cm. Não
 preenche dados antigos nem altera privilégios, códigos ou políticas de acesso.
 O segundo campo guarda a altura de referência da anotação; IMC e razão
@@ -90,10 +91,12 @@ isolamento entre pacientes e leitura profissional somente com autorização,
 sem conceder escrita. Seus dados sintéticos são revertidos integralmente.
 Resultado esperado: `phase1_height_passed`.
 
-Nesta entrega, a migração foi testada dentro de uma transação revertida no
-Supabase, incluindo as contas sintéticas. Os campos não foram adicionados
-permanentemente ao banco de produção. Aplique somente após a aprovação de
-publicação; a demonstração local funciona sem essa alteração.
+Antes da aprovação, a migração foi testada dentro de uma transação revertida.
+Após a aplicação definitiva, `phase1_height_passed`, `patient_isolation_passed`,
+`doctor_sharing_passed`, `custom_doctor_codes_passed` e
+`health_professionals_passed` foram confirmados novamente. Apenas os dados
+sintéticos dos testes foram revertidos; os dois campos opcionais permanecem
+disponíveis, sob as políticas de acesso existentes. Nenhum histórico foi preenchido.
 
 O aviso já existente de proteção contra senhas vazadas continua pendente;
 revise a [configuração de segurança de senhas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)

@@ -40,16 +40,18 @@ navegador bloquear o armazenamento, a simulação funciona apenas em memória.
 Sem Supabase configurado, o login real fica indisponível: não há autenticação
 simulada silenciosa.
 
-## Fase 1 em revisão clínica
+## Fase 1 aprovada
 
-As mudanças desta fase estão em `codex/fase1-ux`, sem publicação automática em
-produção. Antes de usar contas reais nesta versão, é necessário revisar e
-aplicar `supabase/phase1-height.sql`. Não aponte testes de gravação para contas
-de pacientes. O modo demonstração não precisa dessa migração.
+Em 21/11/2026, o responsável confirmou a validação clínica do IMC, da relação
+cintura/altura e dos limites de altura, a conferência da prévia em iPhone/Safari
+e Android/Chrome e autorizou a publicação. Essa conferência em aparelhos foi
+informada pelo responsável, separadamente dos testes automatizados em Chrome.
+`supabase/phase1-height.sql` foi aplicado ao banco de produção, sem preencher
+medidas antigas. Não aponte testes de gravação para contas de pacientes.
 
 Altura é opcional, em centímetros. A faixa de entrada de 30 a 300 cm é uma
-barreira técnica de digitação, não uma faixa clínica de normalidade, e precisa
-ser revisada junto com a interface. Ao salvar medidas de hoje, a altura atual
+barreira técnica de digitação, não uma faixa clínica de normalidade. Mudanças
+nas fórmulas ou nesses limites exigem nova revisão clínica. Ao salvar medidas de hoje, a altura atual
 do perfil é copiada para a anotação. Em datas anteriores, somente uma altura
 já registrada é mantida; não há preenchimento retroativo. Alterar ou limpar
 a altura do perfil não modifica as referências das anotações já salvas.
@@ -64,7 +66,7 @@ Para revisar, inicie a aplicação local e abra **Explorar demonstração**. Vis
 Educação pela URL e recarregue; a simulação deve continuar. Em Perfil, altere
 uma altura fictícia; em Meu registro, salve medidas fictícias de hoje e confira
 as métricas e o gráfico de cintura em Evolução. Registros antigos sem altura
-devem indicar que não há cálculo. Só publique depois da validação clínica.
+devem indicar que não há cálculo. Esse roteiro também serve para futuras revisões.
 
 ## Desenvolvimento
 

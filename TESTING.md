@@ -39,8 +39,9 @@ específicos. `tests/browser/phase1.spec.js` cobre altura no Perfil, medidas,
 gráficos, falhas, histórico sem preenchimento retroativo e demonstração.
 
 A verificação automatizada desta entrega usa Chrome, incluindo largura de
-320 px. A conferência em aparelhos reais com Safari/iPhone e Android Chrome
-continua pendente, assim como a aprovação clínica antes da publicação.
+320 px. Em 21/11/2026, o responsável confirmou a conferência da prévia em
+Safari/iPhone e Android/Chrome, a validação clínica e a autorização de publicação.
+Os testes automatizados não substituem nem comprovam essa conferência manual.
 
 Os testes de compartilhamento cobrem as duas entradas, cadastro profissional,
 busca por código, autorização explícita, vários médicos, consulta somente
@@ -118,11 +119,13 @@ escrita, com rollback integral. A suíte de interface também cobre a equipe com
 quatro profissionais, recarga, entrada profissional, cadastro não médico e
 personalização do código. Os links antigos `/medico` continuam cobertos.
 
-Após aprovação de publicação e `supabase/phase1-height.sql`, execute
-`supabase/verify-phase1-height.sql`. Na preparação desta entrega, o script
-e a migração foram executados juntos dentro de uma transação revertida;
-`phase1_height_passed` foi confirmado e as colunas de altura permaneceram
-ausentes na produção. Não se trata de validação clínica nem de login real.
+Após aplicar `supabase/phase1-height.sql`, execute
+`supabase/verify-phase1-height.sql`. A primeira conferência ocorreu junto da
+migração em uma transação revertida. Após a aprovação e aplicação definitiva
+em 21/11/2026, `phase1_height_passed` foi confirmado novamente, assim como os
+quatro testes anteriores de isolamento e compartilhamento. As colunas opcionais
+permanecem na produção; as contas e medidas sintéticas são revertidas integralmente.
+Esses testes não constituem validação clínica nem teste de login real.
 
 ## Compilação
 

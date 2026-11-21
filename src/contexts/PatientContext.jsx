@@ -7,42 +7,11 @@ import {
   useState,
 } from 'react'
 import { useAuth } from './AuthContext'
-import { dateBefore, localDate } from '../lib/patientData'
+import { demoStore } from '../lib/demoStore'
 import { patientRepository } from '../services/somaDataService'
 
 const PatientContext = createContext(null)
 const emptyData = { profile: null, entries: [], habitLogs: [] }
-
-function demoData() {
-  return {
-    profile: {
-      full_name: 'Paciente demonstração',
-      birth_date: null,
-      sex: null,
-      goal_weight: null,
-      weekly_exercise_goal: null,
-      sleep_goal_hours: null,
-    },
-    entries: [0, 7, 14].map((days, index) => ({
-      id: `demo-${index}`,
-      entry_date: dateBefore(days),
-      weight_kg: 82 + index * 0.4,
-      waist_cm: null,
-      sleep_minutes: 420,
-      activity_minutes: 20,
-      water_liters: 1.5,
-      mood_score: 7,
-    })),
-    habitLogs: [
-      {
-        id: 'demo-sleep',
-        logged_at: localDate(),
-        habit_key: 'sleep',
-        value: 1,
-      },
-    ],
-  }
-}
 
 export function PatientProvider({ children }) {
   const { user, isDemo } = useAuth()
@@ -56,7 +25,8 @@ export function PatientProvider({ children }) {
     setError('')
     setIsLoading(true)
     try {
-      const next = isDemo ? demoData() : await patientRepository.load()
+      const next = isDemo ? demoStore.read() : await patientRepository.load()
+      if (!next) throw new Error('Reinicie a demonstração para continuar.')
       if (generation.current === request) setData(next)
     } catch {
       if (generation.current === request)
@@ -73,6 +43,14 @@ export function PatientProvider({ children }) {
     }
   }, [reload])
 
+  function updateData(update) {
+    if (isDemo) {
+      const current = demoStore.read()
+      if (!current) throw new Error('Reinicie a demonstração para continuar.')
+      setData(demoStore.save(update(current)))
+    } else setData(update)
+  }
+
   async function saveEntry(values) {
     if (isDemo)
       throw new Error(
@@ -80,8 +58,8 @@ export function PatientProvider({ children }) {
       )
     const request = generation.current
     const entry = await patientRepository.saveEntry(values)
-    if (generation.current === request)
-      setData((current) => ({
+    if (generation.current === request) {
+      const update = (current) => ({
         ...current,
         entries: [
           entry,
@@ -89,7 +67,9 @@ export function PatientProvider({ children }) {
             (item) => item.entry_date !== entry.entry_date,
           ),
         ].sort((a, b) => b.entry_date.localeCompare(a.entry_date)),
-      }))
+      })
+      updateData(update)
+    }
     return entry
   }
 
@@ -104,7 +84,7 @@ export function PatientProvider({ children }) {
         }
       : await patientRepository.saveHabit(date, key, completed)
     if (generation.current === request)
-      setData((current) => ({
+      updateData((current) => ({
         ...current,
         habitLogs: [
           log,
@@ -124,7 +104,7 @@ export function PatientProvider({ children }) {
       full_name: values.full_name ?? fullName,
     })
     if (generation.current === request)
-      setData((current) => ({ ...current, profile }))
+      updateData((current) => ({ ...current, profile }))
   }
 
   const fullName =

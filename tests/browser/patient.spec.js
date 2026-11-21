@@ -51,6 +51,37 @@ test('demo is explicit, shared across screens and cannot save personal records',
   expect(ui.requests).toEqual([])
 })
 
+test('demo reload and direct URLs preserve the fictitious session and logout clears it', async ({
+  page,
+  ui,
+}) => {
+  await page.goto('/login')
+  await page.getByRole('button', { name: 'Explorar demonstração' }).click()
+  await page.getByRole('button', { name: /^Movimento Registrar/ }).click()
+  for (const path of ['/educacao', '/evolucao', '/habitos', '/perfil']) {
+    await page.goto(path)
+    await expect(page.getByText('Demonstração · dados fictícios')).toBeVisible()
+    await expect(page).toHaveURL(new RegExp(`${path}$`))
+    await page.reload()
+    await expect(page.getByText('Demonstração · dados fictícios')).toBeVisible()
+  }
+  await page.goto('/habitos')
+  await expect(
+    page.getByRole('button', { name: /^Movimento Registrar/ }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await page
+    .getByRole('button', { name: 'Ir para o login', exact: true })
+    .click()
+  await page.goto('/educacao')
+  await expect(page).toHaveURL(/\/login$/)
+  expect(
+    await page.evaluate(() => sessionStorage.getItem('endo-demo-v1')),
+  ).toBeNull()
+  await ui.login()
+  await expect(page.getByText('Demonstração · dados fictícios')).toHaveCount(0)
+  expect(ui.data().entries).toEqual([])
+})
+
 test('daily measures save, survive reload and update the same row', async ({
   page,
   ui,
@@ -181,9 +212,9 @@ test('future birth dates and empty measures do not save personal details', async
   await page.getByLabel('Sexo (opcional)').selectOption('male')
   await page.getByRole('button', { name: 'Salvar registro' }).click()
   expect(
-    await page.getByLabel('Data de nascimento (opcional)').evaluate(
-      (input) => input.validity.rangeOverflow,
-    ),
+    await page
+      .getByLabel('Data de nascimento (opcional)')
+      .evaluate((input) => input.validity.rangeOverflow),
   ).toBe(true)
   await page.getByLabel('Data de nascimento (opcional)').fill('1990-07-15')
   await page.getByLabel('Peso (kg)', { exact: true }).fill('')
@@ -191,9 +222,7 @@ test('future birth dates and empty measures do not save personal details', async
   await expect(page.getByRole('alert')).toContainText(
     'Preencha pelo menos um registro',
   )
-  expect(
-    ui.requests.filter((request) => request.method === 'POST'),
-  ).toEqual([])
+  expect(ui.requests.filter((request) => request.method === 'POST')).toEqual([])
 })
 
 test('failed personal details save preserves input and does not create a measurement', async ({

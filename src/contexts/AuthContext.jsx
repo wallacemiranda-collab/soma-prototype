@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { demoSession, demoStore } from '../lib/demoStore'
 import {
   getCurrentSession,
   onAuthStateChange,
@@ -11,9 +12,12 @@ import {
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null)
+  const [restoredDemo] = useState(() => Boolean(demoStore.read()))
+  const [session, setSession] = useState(() =>
+    restoredDemo ? demoSession() : null,
+  )
   const [isLoading, setIsLoading] = useState(true)
-  const [isDemo, setIsDemo] = useState(false)
+  const [isDemo, setIsDemo] = useState(restoredDemo)
   const [accessMode, setMode] = useState(() => {
     try {
       return sessionStorage.getItem('endo-access-mode') === 'doctor'
@@ -37,20 +41,29 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let active = true
     let eventReceived = false
-    const subscription = onAuthStateChange((nextSession) => {
-      eventReceived = true
-      if (active) {
+    function applySession(nextSession, event = 'INITIAL_SESSION') {
+      if (!active) return
+      if (nextSession || event !== 'INITIAL_SESSION') {
+        demoStore.clear()
         setSession(nextSession)
         setIsDemo(false)
-        setIsLoading(false)
+      } else {
+        const demo = Boolean(demoStore.read())
+        setSession(demo ? demoSession() : null)
+        setIsDemo(demo)
       }
+      setIsLoading(false)
+    }
+    const subscription = onAuthStateChange((nextSession, event) => {
+      eventReceived = true
+      applySession(nextSession, event)
     })
     getCurrentSession()
       .then(({ session: current }) => {
-        if (active && !eventReceived) setSession(current)
+        if (!eventReceived) applySession(current)
       })
       .catch(() => {
-        if (active && !eventReceived) setSession(null)
+        if (!eventReceived) applySession(null)
       })
       .finally(() => {
         if (active) setIsLoading(false)
@@ -64,6 +77,7 @@ export function AuthProvider({ children }) {
   async function signIn(email, password) {
     const result = await signInWithEmail(email, password)
     if (!result.error && result.data?.session) {
+      demoStore.clear()
       setIsDemo(false)
       setSession(result.data.session)
     }
@@ -74,6 +88,7 @@ export function AuthProvider({ children }) {
     const result = await signUpWithEmail(email, password, fullName)
     if (result.error) return result
     if (result.data?.session) {
+      demoStore.clear()
       setIsDemo(false)
       setSession(result.data.session)
     }
@@ -83,6 +98,7 @@ export function AuthProvider({ children }) {
   async function signOut() {
     const result = isDemo ? { error: null } : await endSession()
     if (!result.error) {
+      demoStore.clear()
       setSession(null)
       setIsDemo(false)
     }
@@ -90,14 +106,9 @@ export function AuthProvider({ children }) {
   }
 
   function startDemo() {
+    demoStore.start()
     setIsDemo(true)
-    setSession({
-      user: {
-        id: 'demo-user',
-        email: 'demo@exemplo.invalid',
-        user_metadata: { full_name: 'Paciente demonstração' },
-      },
-    })
+    setSession(demoSession())
   }
 
   return (

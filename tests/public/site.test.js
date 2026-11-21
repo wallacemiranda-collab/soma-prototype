@@ -1,4 +1,4 @@
-import { after, before, describe, test } from 'node:test'
+import { after, afterEach, before, beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { chromium, expect } from '@playwright/test'
 import './domains.test.js'
@@ -21,6 +21,10 @@ describe('published Endo +', { timeout: 90000 }, () => {
       headless: true,
       timeout: 20000,
     })
+  })
+  beforeEach(async () => {
+    errors.length = 0
+    writes.length = 0
     context = await browser.newContext({
       viewport: { width: 390, height: 844 },
       locale: 'pt-BR',
@@ -34,6 +38,9 @@ describe('published Endo +', { timeout: 90000 }, () => {
       if (request.url().includes('/rest/v1/') && request.method() !== 'GET')
         writes.push(request.url())
     })
+  })
+  afterEach(async () => {
+    await context?.close()
   })
   after(async () => {
     await browser?.close()

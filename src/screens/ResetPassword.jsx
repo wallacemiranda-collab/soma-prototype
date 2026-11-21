@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { updatePassword } from '../services/authService'
 
 export default function ResetPassword() {
-  const { isLoading, isAuthenticated, isDemo } = useAuth()
+  const { isLoading, isAuthenticated, isDemo, accessMode } = useAuth()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -24,7 +24,7 @@ export default function ResetPassword() {
     try {
       const result = await updatePassword(password)
       if (result.error) throw result.error
-      navigate('/home', { replace: true })
+      navigate(accessMode === 'doctor' ? '/medico' : '/home', { replace: true })
     } catch {
       setError(
         'Não foi possível alterar a senha. Solicite um novo link e tente novamente.',

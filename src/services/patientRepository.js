@@ -1,10 +1,10 @@
 import {
-  dateBefore,
   habitDefinitions,
   validateDate,
   validateEntry,
   validateProfile,
 } from '../lib/patientData.js'
+import { loadHistory } from './patientHistory.js'
 
 export function createPatientRepository(client) {
   async function currentUser() {
@@ -28,24 +28,12 @@ export function createPatientRepository(client) {
       const user = await currentUser()
       const responses = await Promise.all([
         client.from('profiles').select('*').eq('id', user.id).maybeSingle(),
-        client
-          .from('metabolic_entries')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('entry_date', dateBefore(365))
-          .order('entry_date', { ascending: false })
-          .limit(366),
-        client
-          .from('habit_logs')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('logged_at', dateBefore(365))
-          .order('logged_at', { ascending: false })
-          .limit(1464),
+        loadHistory(client, 'metabolic_entries', user.id, 'entry_date'),
+        loadHistory(client, 'habit_logs', user.id, 'logged_at'),
       ])
       let profile = result(responses[0])
-      const entries = result(responses[1]) ?? []
-      const habitLogs = result(responses[2]) ?? []
+      const entries = responses[1]
+      const habitLogs = responses[2]
       if (!profile) {
         const fullName =
           user.user_metadata?.full_name ||

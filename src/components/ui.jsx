@@ -83,6 +83,20 @@ export function FormField({ label, className = '', ...props }) {
   )
 }
 
+export function SelectField({ label, children, className = '', ...props }) {
+  return (
+    <label className={`block text-sm font-medium text-soma-800 ${className}`}>
+      {label}
+      <select
+        className="mt-2 w-full min-w-0 rounded-xl border border-soma-200 bg-white px-4 py-3 text-soma-900 disabled:opacity-60"
+        {...props}
+      >
+        {children}
+      </select>
+    </label>
+  )
+}
+
 export function Feedback({ error, message }) {
   if (!error && !message) return null
   return (

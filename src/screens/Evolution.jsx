@@ -13,9 +13,14 @@ import {
 
 export default function Evolution() {
   const { entries, habitLogs } = usePatient()
+  return <EvolutionContent entries={entries} habitLogs={habitLogs} />
+}
+
+export function EvolutionContent({ entries, habitLogs, readOnly = false }) {
   const [days, setDays] = useState(30)
+  const [count, setCount] = useState(20)
   const visible = entries.filter(
-    (entry) => entry.entry_date >= dateBefore(days - 1),
+    (entry) => !days || entry.entry_date >= dateBefore(days - 1),
   )
   const weights = visible
     .filter((entry) => entry.weight_kg !== null)
@@ -26,21 +31,43 @@ export default function Evolution() {
     weights.length > 1 ? Number(current) - Number(weights[0].weight_kg) : null
   return (
     <>
-      <AppHeader
-        title="Sua evolução"
-        subtitle="Histórico das suas próprias anotações"
-        simple
-      />
-      <div className="mb-5 flex gap-2">
-        {[7, 30, 90].map((period) => (
+      {readOnly ? (
+        <header className="mb-6">
+          <h2 className="text-2xl font-semibold text-soma-900">
+            Evolução do paciente
+          </h2>
+          <p className="mt-2 text-sm text-soma-600">
+            Registros informados pelo paciente · somente leitura
+          </p>
+        </header>
+      ) : (
+        <AppHeader
+          title="Sua evolução"
+          subtitle="Histórico das suas próprias anotações"
+          simple
+        />
+      )}
+      {!readOnly && (
+        <Link
+          to="/compartilhar"
+          className="mb-5 inline-block rounded-xl bg-soma-100 px-4 py-3 text-sm font-semibold text-soma-800"
+        >
+          Compartilhar evolução
+        </Link>
+      )}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {[7, 30, 90, 0].map((period) => (
           <button
             key={period}
             type="button"
             aria-pressed={days === period}
-            onClick={() => setDays(period)}
+            onClick={() => {
+              setDays(period)
+              setCount(20)
+            }}
             className={`rounded-full px-4 py-2 text-sm font-semibold ${days === period ? 'bg-soma-800 text-white' : 'bg-white text-soma-600'}`}
           >
-            {period} dias
+            {period ? `${period} dias` : 'Todo o histórico'}
           </button>
         ))}
       </div>
@@ -53,7 +80,9 @@ export default function Evolution() {
         </MetabolicCard>
         <MetabolicCard>
           <p className="text-sm text-soma-600">Variação no período</p>
-          <p className="mt-2 text-xl font-semibold">
+          <p
+            className={`mt-2 font-semibold ${difference === null ? 'text-sm' : 'text-xl'}`}
+          >
             {difference === null
               ? 'Sem comparação'
               : `${difference > 0 ? '+' : ''}${formatNumber(difference, ' kg')}`}
@@ -92,19 +121,23 @@ export default function Evolution() {
             <p className="text-sm text-soma-600">
               Seu histórico aparecerá aqui depois do primeiro registro.
             </p>
-            <Link
-              to="/registro"
-              className="mt-4 inline-block font-semibold text-soma-600"
-            >
-              Fazer meu primeiro registro
-            </Link>
+            {!readOnly && (
+              <Link
+                to="/registro"
+                className="mt-4 inline-block font-semibold text-soma-600"
+              >
+                Fazer meu primeiro registro
+              </Link>
+            )}
           </MetabolicCard>
         ) : (
           <div className="space-y-3">
-            {visible.map((entry) => (
+            {visible.slice(0, count).map((entry) => (
               <MetabolicCard key={entry.id}>
                 <h3 className="font-semibold">
-                  {formatDate(entry.entry_date)}
+                  {new Intl.DateTimeFormat('pt-BR', {
+                    dateStyle: 'medium',
+                  }).format(new Date(`${entry.entry_date}T12:00:00`))}
                 </h3>
                 <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
                   {[
@@ -129,14 +162,25 @@ export default function Evolution() {
                     </div>
                   ))}
                 </dl>
-                <Link
-                  to={`/registro?data=${entry.entry_date}`}
-                  className="mt-4 inline-block text-sm font-semibold text-soma-600"
-                >
-                  Editar registro
-                </Link>
+                {!readOnly && (
+                  <Link
+                    to={`/registro?data=${entry.entry_date}`}
+                    className="mt-4 inline-block text-sm font-semibold text-soma-600"
+                  >
+                    Editar registro
+                  </Link>
+                )}
               </MetabolicCard>
             ))}
+            {visible.length > count && (
+              <button
+                type="button"
+                onClick={() => setCount((currentCount) => currentCount + 20)}
+                className="w-full rounded-xl bg-white p-4 font-semibold text-soma-800"
+              >
+                Mostrar mais registros
+              </button>
+            )}
           </div>
         )}
       </section>

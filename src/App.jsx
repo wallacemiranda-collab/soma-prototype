@@ -17,6 +17,10 @@ import Splash from './screens/Splash'
 import PatientEntry from './screens/PatientEntry'
 import AuthCallback from './screens/AuthCallback'
 import ResetPassword from './screens/ResetPassword'
+import Sharing from './screens/Sharing'
+import DoctorShell from './components/DoctorShell'
+import DoctorDashboard from './screens/DoctorDashboard'
+import DoctorPatient from './screens/DoctorPatient'
 
 export default function App() {
   useEffect(() => {
@@ -41,6 +45,14 @@ export default function App() {
             <Route path="/educacao" element={<Education />} />
             <Route path="/perfil" element={<Profile />} />
             <Route path="/registro" element={<PatientEntry />} />
+            <Route path="/compartilhar" element={<Sharing />} />
+          </Route>
+          <Route element={<DoctorShell />}>
+            <Route path="/medico" element={<DoctorDashboard />} />
+            <Route
+              path="/medico/pacientes/:patientId"
+              element={<DoctorPatient />}
+            />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

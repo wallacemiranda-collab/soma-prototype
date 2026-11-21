@@ -26,7 +26,7 @@ export const habitDefinitions = [
 ]
 
 export function localDate(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 export function dateBefore(days, now = new Date()) {
@@ -88,6 +88,33 @@ export function validateEntry(values) {
   return result
 }
 
+export const sexOptions = [
+  { value: 'female', label: 'Feminino' },
+  { value: 'male', label: 'Masculino' },
+  { value: 'intersex', label: 'Intersexo' },
+  { value: 'not_informed', label: 'Prefiro não informar' },
+]
+
+export function validatePersonalDetails(values, today = localDate()) {
+  const birthDate =
+    typeof values.birth_date === 'string'
+      ? values.birth_date.trim()
+      : values.birth_date
+  let birth_date = null
+  if (birthDate !== null && birthDate !== undefined && birthDate !== '') {
+    try {
+      birth_date = validateDate(birthDate, today)
+      if (birth_date < '0001-01-01') throw new Error('Invalid year')
+    } catch {
+      throw new Error('Data de nascimento: informe uma data válida, até hoje.')
+    }
+  }
+  const sex = values.sex === '' || values.sex == null ? null : values.sex
+  if (sex !== null && !sexOptions.some((option) => option.value === sex))
+    throw new Error('Sexo: selecione uma das opções disponíveis.')
+  return { birth_date, sex }
+}
+
 export function validateProfile(values) {
   const fullName =
     typeof values.full_name === 'string' ? values.full_name.trim() : ''
@@ -95,6 +122,7 @@ export function validateProfile(values) {
     throw new Error('Informe seu nome, com até 100 caracteres.')
   return {
     full_name: fullName,
+    ...validatePersonalDetails(values),
     goal_weight: optionalNumber(values.goal_weight, 0.1, 800, 'Meta de peso'),
     weekly_exercise_goal: optionalNumber(
       values.weekly_exercise_goal,

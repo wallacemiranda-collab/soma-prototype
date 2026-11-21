@@ -39,11 +39,15 @@ test('demo is explicit, shared across screens and cannot save personal records',
     .getByRole('link', { name: 'Registrar medidas', exact: true })
     .click()
   await expect(page.getByLabel('Peso (kg)', { exact: true })).toBeDisabled()
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toBeDisabled()
+  await expect(page.getByLabel('Sexo (opcional)')).toBeDisabled()
   await expect(page.getByRole('button', { name: /registro$/ })).toBeDisabled()
   await page.getByRole('link', { name: 'Perfil', exact: true }).click()
   await expect(
     page.getByRole('button', { name: 'Salvar perfil' }),
   ).toBeDisabled()
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toBeDisabled()
+  await expect(page.getByLabel('Sexo (opcional)')).toBeDisabled()
   expect(ui.requests).toEqual([])
 })
 
@@ -120,6 +124,133 @@ test('blank, negative and future measurements are not submitted', async ({
   ).toEqual([])
 })
 
+test('personal details save with the first weight and persist across dates and screens', async ({
+  page,
+  ui,
+}) => {
+  ui.data().profile.goal_weight = 75
+  await ui.login()
+  await ui.record()
+  await page.getByLabel('Data de nascimento (opcional)').fill('1992-02-29')
+  await page.getByLabel('Sexo (opcional)').selectOption('female')
+  await page.getByLabel('Data', { exact: true }).fill(dateBefore(1))
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toHaveValue(
+    '1992-02-29',
+  )
+  await expect(page.getByLabel('Sexo (opcional)')).toHaveValue('female')
+  await page.getByLabel('Peso (kg)', { exact: true }).fill('82.4')
+  await page.getByRole('button', { name: 'Salvar registro' }).click()
+  await expect(page.getByRole('status')).toContainText('Registro salvo')
+  expect(ui.data().profile).toMatchObject({
+    full_name: 'Ana teste',
+    birth_date: '1992-02-29',
+    sex: 'female',
+    goal_weight: 75,
+  })
+  expect(ui.data().entries[0]).not.toHaveProperty('birth_date')
+  expect(ui.data().entries[0]).not.toHaveProperty('sex')
+  await page.reload()
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toHaveValue(
+    '1992-02-29',
+  )
+  await expect(page.getByLabel('Sexo (opcional)')).toHaveValue('female')
+  await page.getByRole('link', { name: 'Perfil', exact: true }).click()
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toHaveValue(
+    '1992-02-29',
+  )
+  await expect(page.getByLabel('Sexo (opcional)')).toHaveValue('female')
+  await page.getByLabel('Data de nascimento (opcional)').fill('')
+  await page.getByLabel('Sexo (opcional)').selectOption('')
+  await page.getByRole('button', { name: 'Salvar perfil' }).click()
+  await expect(page.getByRole('status')).toContainText('Perfil atualizado')
+  expect(ui.data().profile.birth_date).toBeNull()
+  expect(ui.data().profile.sex).toBeNull()
+  await ui.record()
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toHaveValue('')
+  await expect(page.getByLabel('Sexo (opcional)')).toHaveValue('')
+})
+
+test('future birth dates and empty measures do not save personal details', async ({
+  page,
+  ui,
+}) => {
+  await ui.login()
+  await ui.record()
+  await page.getByLabel('Peso (kg)', { exact: true }).fill('80')
+  await page.getByLabel('Data de nascimento (opcional)').fill(dateBefore(-1))
+  await page.getByLabel('Sexo (opcional)').selectOption('male')
+  await page.getByRole('button', { name: 'Salvar registro' }).click()
+  expect(
+    await page.getByLabel('Data de nascimento (opcional)').evaluate(
+      (input) => input.validity.rangeOverflow,
+    ),
+  ).toBe(true)
+  await page.getByLabel('Data de nascimento (opcional)').fill('1990-07-15')
+  await page.getByLabel('Peso (kg)', { exact: true }).fill('')
+  await page.getByRole('button', { name: 'Salvar registro' }).click()
+  await expect(page.getByRole('alert')).toContainText(
+    'Preencha pelo menos um registro',
+  )
+  expect(
+    ui.requests.filter((request) => request.method === 'POST'),
+  ).toEqual([])
+})
+
+test('failed personal details save preserves input and does not create a measurement', async ({
+  page,
+  ui,
+}) => {
+  await ui.login()
+  await ui.record()
+  await page.getByLabel('Peso (kg)', { exact: true }).fill('80')
+  await page.getByLabel('Data de nascimento (opcional)').fill('1990-07-15')
+  await page.getByLabel('Sexo (opcional)').selectOption('intersex')
+  ui.failNext('profiles')
+  await page.getByRole('button', { name: 'Salvar registro' }).click()
+  await expect(page.getByRole('alert')).toBeVisible()
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toHaveValue(
+    '1990-07-15',
+  )
+  await expect(page.getByLabel('Sexo (opcional)')).toHaveValue('intersex')
+  await expect(page.getByLabel('Peso (kg)', { exact: true })).toHaveValue('80')
+  expect(ui.data().profile.birth_date).toBeNull()
+  expect(ui.data().entries).toHaveLength(0)
+  await page.getByRole('button', { name: 'Salvar registro' }).click()
+  await expect(page.getByRole('status')).toContainText('Registro salvo')
+  expect(ui.data().profile.sex).toBe('intersex')
+  expect(ui.data().entries).toHaveLength(1)
+})
+
+test('a measurement failure after saving personal details is explicit and can be retried', async ({
+  page,
+  ui,
+}) => {
+  await ui.login()
+  await ui.record()
+  await page.getByLabel('Peso (kg)', { exact: true }).fill('80')
+  await page.getByLabel('Data de nascimento (opcional)').fill('1990-07-15')
+  await page.getByLabel('Sexo (opcional)').selectOption('not_informed')
+  ui.failNext('metabolic_entries')
+  await page.getByRole('button', { name: 'Salvar registro' }).click()
+  await expect(page.getByRole('alert')).toContainText(
+    'Seus dados pessoais foram salvos, mas o registro não foi concluído',
+  )
+  expect(ui.data().profile).toMatchObject({
+    birth_date: '1990-07-15',
+    sex: 'not_informed',
+  })
+  expect(ui.data().entries).toHaveLength(0)
+  await expect(page.getByLabel('Peso (kg)', { exact: true })).toHaveValue('80')
+  await page.getByRole('button', { name: 'Salvar registro' }).click()
+  await expect(page.getByRole('status')).toContainText('Registro salvo')
+  expect(ui.data().entries).toHaveLength(1)
+  expect(
+    ui.requests.filter(
+      (request) => request.table === 'profiles' && request.method === 'POST',
+    ),
+  ).toHaveLength(1)
+})
+
 test('record dates remain separate and edits restore the selected day', async ({
   page,
   ui,
@@ -193,6 +324,8 @@ test('profile edits persist and are cleared when another account signs in', asyn
   await expect(page.getByRole('status')).toContainText('Registro salvo')
   await page.getByRole('link', { name: 'Perfil', exact: true }).click()
   await page.getByLabel('Nome completo', { exact: true }).fill('Beatriz teste')
+  await page.getByLabel('Data de nascimento (opcional)').fill('1990-07-15')
+  await page.getByLabel('Sexo (opcional)').selectOption('female')
   await page
     .getByLabel('Meta pessoal de peso (kg, opcional)', { exact: true })
     .fill('75')
@@ -205,6 +338,10 @@ test('profile edits persist and are cleared when another account signs in', asyn
   await expect(
     page.getByLabel('Meta pessoal de peso (kg, opcional)', { exact: true }),
   ).toHaveValue('75')
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toHaveValue(
+    '1990-07-15',
+  )
+  await expect(page.getByLabel('Sexo (opcional)')).toHaveValue('female')
   await page.getByRole('button', { name: 'Sair da conta' }).click()
   await expect(page).toHaveURL(/\/login$/)
   await page.goto('/evolucao')
@@ -213,6 +350,9 @@ test('profile edits persist and are cleared when another account signs in', asyn
   await expect(page.getByText('Sem registro', { exact: true })).toHaveCount(2)
   await expect(page.getByText('Beatriz teste', { exact: true })).toHaveCount(0)
   expect(ui.data().entries).toHaveLength(0)
+  await page.getByRole('link', { name: 'Perfil', exact: true }).click()
+  await expect(page.getByLabel('Data de nascimento (opcional)')).toHaveValue('')
+  await expect(page.getByLabel('Sexo (opcional)')).toHaveValue('')
 })
 
 test('data load failures can be retried and still allow logout', async ({

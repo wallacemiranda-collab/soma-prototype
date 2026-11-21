@@ -12,6 +12,16 @@ const identities = [
     name: 'Bruno teste',
     email: 'bruno@example.invalid',
   },
+  {
+    id: 'db3f8eb5-0611-48c7-b24d-4c2618222f8e',
+    name: 'Carla teste',
+    email: 'carla@example.invalid',
+  },
+  {
+    id: 'c04a7b3c-2949-4a0e-a962-6bf49700cbdd',
+    name: 'Daniel teste',
+    email: 'daniel@example.invalid',
+  },
 ]
 
 export const test = base.extend({
@@ -21,6 +31,16 @@ export const test = base.extend({
     const errors = []
     const failures = []
     const blockedReads = new Set()
+    const shares = new Map()
+    const codeReservations = new Map()
+    const allowed = (patientId) => {
+      const share = shares.get(`${patientId}:${active.id}`)
+      return Boolean(
+        share &&
+          !share.revoked_at &&
+          (!share.expires_at || Date.parse(share.expires_at) > Date.now()),
+      )
+    }
     const accounts = new Map(
       identities.map(({ id, name, email }) => [
         id,
@@ -29,12 +49,15 @@ export const test = base.extend({
             id,
             full_name: name,
             email,
+            birth_date: null,
+            sex: null,
             goal_weight: null,
             weekly_exercise_goal: null,
             sleep_goal_hours: null,
           },
           entries: [],
           logs: [],
+          doctorProfile: null,
         },
       ]),
     )
@@ -113,28 +136,144 @@ export const test = base.extend({
       if (url.pathname === '/auth/v1/signup')
         return reply({ user: user(), session: null })
       if (url.pathname === '/auth/v1/recover') return reply({})
+      if (url.pathname.startsWith('/rest/v1/rpc/')) {
+        requests.push({ table, method, values: structuredClone(payload) })
+        if (table === 'endo_lookup_doctor') {
+          const profile = [...accounts.values()]
+            .map((account) => account.doctorProfile)
+            .find((doctor) => doctor?.share_code === payload.p_code)
+          return reply(
+            profile
+              ? [
+                  {
+                    doctor_id: profile.user_id,
+                    professional_name: profile.professional_name,
+                    crm: profile.crm,
+                    crm_state: profile.crm_state,
+                  },
+                ]
+              : [],
+          )
+        }
+        if (table === 'endo_my_doctors')
+          return reply(
+            [...shares.values()]
+              .filter((share) => share.patient_id === active.id)
+              .map((share) => ({
+                ...share,
+                ...accounts.get(share.doctor_id).doctorProfile,
+              })),
+          )
+        if (table === 'endo_my_patients')
+          return reply(
+            [...shares.values()]
+              .filter(
+                (share) =>
+                  share.doctor_id === active.id && allowed(share.patient_id),
+              )
+              .map((share) => ({
+                ...share,
+                full_name: accounts.get(share.patient_id).profile.full_name,
+              })),
+          )
+        if (table === 'endo_can_read_patient')
+          return reply(allowed(payload.p_patient_id))
+        if (table === 'endo_shared_profile') {
+          if (!allowed(payload.p_patient_id))
+            return reply({ message: 'Patient authorization required' }, 403)
+          const { email, ...profile } = accounts.get(
+            payload.p_patient_id,
+          ).profile
+          return reply([profile])
+        }
+        if (table === 'endo_grant_doctor_access') {
+          if (
+            !accounts.get(payload.p_doctor_id)?.doctorProfile ||
+            payload.p_doctor_id === active.id
+          )
+            return reply({ message: 'Invalid doctor' }, 400)
+          shares.set(`${active.id}:${payload.p_doctor_id}`, {
+            patient_id: active.id,
+            doctor_id: payload.p_doctor_id,
+            granted_at: new Date().toISOString(),
+            expires_at:
+              payload.p_days === null
+                ? null
+                : new Date(
+                    Date.now() + payload.p_days * 86400000,
+                  ).toISOString(),
+            revoked_at: null,
+          })
+          return reply(null)
+        }
+        if (table === 'endo_revoke_doctor_access') {
+          const share = shares.get(`${active.id}:${payload.p_doctor_id}`)
+          if (share) share.revoked_at = new Date().toISOString()
+          return reply(null)
+        }
+        throw new Error(`Unexpected RPC: ${table}`)
+      }
       expect(url.pathname).toMatch(
-        /^\/rest\/v1\/(profiles|metabolic_entries|habit_logs)$/,
+        /^\/rest\/v1\/(profiles|metabolic_entries|habit_logs|doctor_profiles)$/,
       )
       const data = accounts.get(active.id)
       requests.push({ table, method, values: structuredClone(payload) })
       if (method === 'GET') {
-        expect(
-          url.searchParams.get(table === 'profiles' ? 'id' : 'user_id'),
-        ).toBe(`eq.${active.id}`)
+        const target = url.searchParams
+          .get(table === 'profiles' ? 'id' : 'user_id')
+          ?.replace(/^eq\./, '')
+        if (table === 'doctor_profiles') {
+          expect(target).toBe(active.id)
+          return reply(data.doctorProfile)
+        }
+        if (target !== active.id && (table === 'profiles' || !allowed(target)))
+          return reply([])
         if (table === 'profiles') return reply(data.profile)
         const dateKey =
           table === 'metabolic_entries' ? 'entry_date' : 'logged_at'
         const minimum =
           url.searchParams.get(dateKey)?.replace(/^gte\./, '') || ''
         return reply(
-          (table === 'metabolic_entries' ? data.entries : data.logs)
+          (table === 'metabolic_entries'
+            ? accounts.get(target).entries
+            : accounts.get(target).logs
+          )
             .filter((item) => item[dateKey] >= minimum)
             .slice()
-            .sort((a, b) => b[dateKey].localeCompare(a[dateKey])),
+            .sort((a, b) => b[dateKey].localeCompare(a[dateKey]))
+            .slice(
+              Number(url.searchParams.get('offset') || 0),
+              Number(url.searchParams.get('offset') || 0) +
+                Number(url.searchParams.get('limit') || 500),
+            ),
         )
       }
+      if (method === 'PATCH' && table === 'doctor_profiles') {
+        expect(url.searchParams.get('user_id')).toBe(`eq.${active.id}`)
+        expect(Object.keys(payload)).toEqual(['share_code'])
+        const code = payload.share_code
+        if (!/^[A-Z0-9]{6,24}$/.test(code))
+          return reply({ code: '23514', message: 'Invalid code' }, 400)
+        const owner = codeReservations.get(code)
+        if (owner !== undefined && owner !== active.id)
+          return reply({ code: '23505', message: 'Code unavailable' }, 409)
+        codeReservations.set(code, active.id)
+        data.doctorProfile = { ...data.doctorProfile, share_code: code }
+        return reply(data.doctorProfile)
+      }
       expect(method).toBe('POST')
+      if (table === 'doctor_profiles') {
+        expect(payload.user_id).toBe(active.id)
+        data.doctorProfile = {
+          ...payload,
+          share_code:
+            active.id === identities[2].id
+              ? 'ABCDEF1234567890'
+              : '1234567890ABCDEF',
+        }
+        codeReservations.set(data.doctorProfile.share_code, active.id)
+        return reply(data.doctorProfile)
+      }
       if (table === 'profiles') {
         expect(payload.id).toBe(active.id)
         expect(url.searchParams.get('on_conflict')).toBe('id')
@@ -165,6 +304,8 @@ export const test = base.extend({
     await use({
       requests,
       accounts,
+      shares,
+      codeReservations,
       identities,
       session,
       data: () => accounts.get(active.id),
@@ -172,8 +313,10 @@ export const test = base.extend({
       allowReads: (table) => blockedReads.delete(table),
       failNext: (table, method = 'POST', status = 500) =>
         failures.push({ table, method, status }),
-      async login(index = 0) {
-        await page.goto('/login')
+      async login(index = 0, mode = 'patient') {
+        await page.goto(
+          `/login?acesso=${mode === 'doctor' ? 'medico' : 'paciente'}`,
+        )
         await page
           .getByLabel('E-mail', { exact: true })
           .fill(identities[index].email)
@@ -182,6 +325,7 @@ export const test = base.extend({
           .fill('Synthetic-password-123!')
         await page.getByRole('button', { name: 'Entrar', exact: true }).click()
         await expect(page.getByRole('navigation')).toBeVisible()
+        if (mode === 'doctor') return
         await page
           .getByRole('navigation')
           .getByRole('link', { name: 'Início', exact: true })

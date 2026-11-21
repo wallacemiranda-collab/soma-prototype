@@ -45,7 +45,9 @@ begin
   get diagnostics row_count = row_count;
   if row_count <> 0 then raise exception 'Another patient entry was updated'; end if;
 
-  update public.profiles set full_name = 'Not permitted' where id = patient_b;
+  update public.profiles
+  set full_name = 'Not permitted', birth_date = date '1992-02-29', sex = 'female'
+  where id = patient_b;
   get diagnostics row_count = row_count;
   if row_count <> 0 then raise exception 'Another profile was updated'; end if;
   update public.habit_logs set value = 0 where user_id = patient_b;
@@ -101,9 +103,29 @@ begin
   values (patient_a, current_date - 1, 0, 454);
   select count(*) into row_count from public.metabolic_entries where user_id = patient_a;
   if row_count <> 2 then raise exception 'Records on separate dates were not preserved'; end if;
-  update public.profiles set full_name = 'Updated synthetic patient', goal_weight = null where id = patient_a;
+  update public.profiles
+  set full_name = 'Updated synthetic patient', goal_weight = null,
+      birth_date = date '1992-02-29', sex = 'female'
+  where id = patient_a;
   get diagnostics row_count = row_count;
   if row_count <> 1 then raise exception 'Own profile could not be updated'; end if;
+  select count(*) into row_count from public.profiles
+  where id = patient_a and birth_date = date '1992-02-29' and sex = 'female';
+  if row_count <> 1 then raise exception 'Own personal details could not be read'; end if;
+  begin
+    update public.profiles set birth_date = current_date + 1 where id = patient_a;
+    raise exception 'A future birth date was accepted';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.profiles set sex = 'invalid' where id = patient_a;
+    raise exception 'An unsupported sex value was accepted';
+  exception when check_violation then null;
+  end;
+  update public.profiles set birth_date = null, sex = null where id = patient_a;
+  select count(*) into row_count from public.profiles
+  where id = patient_a and birth_date is null and sex is null;
+  if row_count <> 1 then raise exception 'Optional personal details could not be cleared'; end if;
   begin
     update public.metabolic_entries set mood_score = 11 where user_id = patient_a;
     raise exception 'An out-of-range measurement was accepted';

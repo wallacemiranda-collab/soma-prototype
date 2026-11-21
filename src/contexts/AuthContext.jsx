@@ -14,6 +14,25 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isDemo, setIsDemo] = useState(false)
+  const [accessMode, setMode] = useState(() => {
+    try {
+      return sessionStorage.getItem('endo-access-mode') === 'doctor'
+        ? 'doctor'
+        : 'patient'
+    } catch {
+      return 'patient'
+    }
+  })
+
+  function setAccessMode(value) {
+    const mode = value === 'doctor' ? 'doctor' : 'patient'
+    setMode(mode)
+    try {
+      sessionStorage.setItem('endo-access-mode', mode)
+    } catch {
+      // This is only a navigation preference, never an authorization claim.
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -89,6 +108,8 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(session?.user),
         isLoading,
         isDemo,
+        accessMode,
+        setAccessMode,
         signIn,
         signUp,
         signOut,

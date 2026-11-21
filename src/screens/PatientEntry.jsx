@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import MetabolicCard from '../components/MetabolicCard'
+import PersonalDetailsFields from '../components/PersonalDetailsFields'
 import { Feedback, FormField, PrimaryButton } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { usePatient } from '../contexts/PatientContext'
 import {
-  dateBefore,
   localDate,
   optionalNumber,
   validateDate,
+  validateEntry,
+  validatePersonalDetails,
 } from '../lib/patientData'
 
 const fields = [
@@ -36,7 +38,7 @@ const fields = [
 export default function PatientEntry() {
   const [params] = useSearchParams()
   const { isDemo } = useAuth()
-  const { entries, saveEntry } = usePatient()
+  const { entries, profile, saveEntry, saveProfile } = usePatient()
   const [date, setDate] = useState(() => {
     try {
       return validateDate(params.get('data') || localDate())
@@ -45,10 +47,17 @@ export default function PatientEntry() {
     }
   })
   const [values, setValues] = useState({})
+  const [personalDetails, setPersonalDetails] = useState({})
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const existing = entries.find((entry) => entry.entry_date === date)
+  useEffect(() => {
+    setPersonalDetails({
+      birth_date: profile?.birth_date ?? '',
+      sex: profile?.sex ?? '',
+    })
+  }, [profile?.birth_date, profile?.sex])
   useEffect(() => {
     setValues(
       Object.fromEntries(
@@ -69,19 +78,33 @@ export default function PatientEntry() {
     setError('')
     setMessage('')
     setPending(true)
+    let personalDetailsSaved = false
     try {
       const hours = optionalNumber(values.sleep_hours, 0, 24, 'Sono')
-      await saveEntry({
+      const entry = validateEntry({
         ...values,
         entry_date: date,
         sleep_minutes: hours === null ? null : Math.round(hours * 60),
       })
+      const details = validatePersonalDetails(personalDetails)
+      if (
+        details.birth_date !== (profile?.birth_date ?? null) ||
+        details.sex !== (profile?.sex ?? null)
+      ) {
+        await saveProfile(details)
+        personalDetailsSaved = true
+      }
+      await saveEntry(entry)
       setMessage('Registro salvo. Seu histórico já foi atualizado.')
     } catch (failure) {
-      setError(
+      const reason =
         failure instanceof Error
           ? failure.message
-          : 'Não foi possível salvar. Confira sua conexão e tente novamente.',
+          : 'Não foi possível salvar. Confira sua conexão e tente novamente.'
+      setError(
+        personalDetailsSaved
+          ? `Seus dados pessoais foram salvos, mas o registro não foi concluído. ${reason}`
+          : reason,
       )
     } finally {
       setPending(false)
@@ -100,7 +123,7 @@ export default function PatientEntry() {
             label="Data"
             type="date"
             value={date}
-            min={dateBefore(365)}
+            min="0001-01-01"
             max={localDate()}
             required
             disabled={pending || isDemo}
@@ -111,6 +134,13 @@ export default function PatientEntry() {
                 setMessage('')
               }
             }}
+          />
+          <PersonalDetailsFields
+            values={personalDetails}
+            disabled={pending || isDemo}
+            onChange={(changes) =>
+              setPersonalDetails((current) => ({ ...current, ...changes }))
+            }
           />
           <div className="grid grid-cols-2 gap-4">
             {fields.map(({ key, label, ...limits }) => (

@@ -21,12 +21,25 @@ export default function Login() {
     isDemo,
     isAuthenticated,
     isLoading,
+    accessMode,
+    setAccessMode,
   } = useAuth()
   const [mode, setMode] = useState(() =>
     new URLSearchParams(location.search).get('modo') === 'cadastro'
       ? 'signup'
       : 'signin',
   )
+  const requested = location.state?.from?.pathname
+  const requestedDoctor = /^\/medico(?:\/pacientes\/[a-f0-9-]+)?$/.test(
+    requested ?? '',
+  )
+  const selection = new URLSearchParams(location.search).get('acesso')
+  const selectedMode =
+    requestedDoctor || selection === 'medico'
+      ? 'doctor'
+      : selection === 'paciente' || requested
+        ? 'patient'
+        : accessMode
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,7 +47,6 @@ export default function Login() {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const requested = location.state?.from?.pathname
   const destination = [
     '/home',
     '/evolucao',
@@ -42,9 +54,14 @@ export default function Login() {
     '/educacao',
     '/perfil',
     '/registro',
+    '/compartilhar',
   ].includes(requested)
     ? requested
-    : '/home'
+    : requestedDoctor
+      ? requested
+      : selectedMode === 'doctor'
+        ? '/medico'
+        : '/home'
 
   if (!isLoading && isAuthenticated)
     return <Navigate to={isDemo ? '/home' : destination} replace />
@@ -62,6 +79,7 @@ export default function Login() {
     setError('')
     setMessage('')
     setPending(true)
+    setAccessMode(selectedMode)
     try {
       const result =
         mode === 'signup'
@@ -93,6 +111,7 @@ export default function Login() {
 
   async function handleGoogle() {
     setError('')
+    setAccessMode(selectedMode)
     setPending(true)
     try {
       const result = await signInGoogle()
@@ -131,6 +150,39 @@ export default function Login() {
           </p>
         )}
         <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+          <fieldset disabled={pending}>
+            <legend className="mb-3 text-sm font-semibold text-soma-800">
+              Como você quer entrar?
+            </legend>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                ['patient', 'Sou paciente', 'paciente'],
+                ['doctor', 'Sou médico', 'medico'],
+              ].map(([value, label, query]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={selectedMode === value}
+                  onClick={() => {
+                    setAccessMode(value)
+                    navigate(
+                      `/login?acesso=${query}${mode === 'signup' ? '&modo=cadastro' : ''}`,
+                      { replace: true },
+                    )
+                  }}
+                  className={`rounded-xl border px-3 py-3 font-semibold ${selectedMode === value ? 'border-soma-800 bg-soma-100 text-soma-900' : 'border-soma-200 bg-white text-soma-600'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {selectedMode === 'doctor' && (
+              <p className="mt-3 text-xs leading-5 text-soma-600">
+                Área profissional. Cada paciente decide se e por quanto tempo
+                compartilha sua evolução.
+              </p>
+            )}
+          </fieldset>
           {mode === 'signup' && (
             <FormField
               label="Nome completo"
@@ -229,6 +281,7 @@ export default function Login() {
             disabled={pending || isLoading}
             onClick={() => {
               startDemo()
+              setAccessMode('patient')
               navigate('/home', { replace: true })
             }}
             className="py-2 font-semibold text-soma-600 disabled:opacity-50"

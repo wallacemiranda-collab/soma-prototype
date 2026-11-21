@@ -1,9 +1,10 @@
 import { after, before, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { chromium, expect } from '@playwright/test'
+import './domains.test.js'
 
 const base = new URL(
-  process.env.ENDO_PUBLIC_URL || 'https://endo-plus.vercel.app',
+  process.env.ENDO_PUBLIC_URL || 'https://endoplus.vercel.app',
 ).origin
 
 describe('published Endo +', { timeout: 90000 }, () => {
@@ -47,6 +48,8 @@ describe('published Endo +', { timeout: 90000 }, () => {
       '/habitos',
       '/educacao',
       '/perfil',
+      '/compartilhar',
+      '/medico',
       '/auth/callback',
       '/redefinir-senha',
     ]) {
@@ -60,6 +63,11 @@ describe('published Endo +', { timeout: 90000 }, () => {
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),
     ).toBeEnabled()
+    await page.goto(base + '/medico')
+    await expect(page).toHaveURL(/\/login$/)
+    await expect(
+      page.getByRole('button', { name: 'Sou médico', exact: true }),
+    ).toHaveAttribute('aria-pressed', 'true')
   })
 
   test('demo navigation does not create accounts or save patient data', async () => {
@@ -78,11 +86,57 @@ describe('published Endo +', { timeout: 90000 }, () => {
         .getByRole('link', { name, exact: true })
         .click()
       await expect(page).toHaveURL(new RegExp(`${path}$`))
+      if (path === '/perfil') {
+        await expect(
+          page.getByLabel('Data de nascimento (opcional)'),
+        ).toBeDisabled()
+        await expect(page.getByLabel('Sexo (opcional)')).toBeDisabled()
+      }
     }
     await page
       .getByRole('link', { name: 'Registrar medidas', exact: true })
       .click()
     await expect(page.getByRole('button', { name: /registro$/ })).toBeDisabled()
+    await expect(
+      page.getByLabel('Data de nascimento (opcional)'),
+    ).toBeDisabled()
+    await expect(page.getByLabel('Sexo (opcional)')).toBeDisabled()
+    await expect(
+      page.getByLabel('Sexo (opcional)').locator('option'),
+    ).toHaveText([
+      'Selecione, se desejar',
+      'Feminino',
+      'Masculino',
+      'Intersexo',
+      'Prefiro não informar',
+    ])
+    await page.setViewportSize({ width: 320, height: 800 })
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+      true,
+    )
+    assert.deepEqual(writes, [])
+    assert.deepEqual(errors, [])
+  })
+
+  test('landing exposes both entries and demo cannot authorize a doctor', async () => {
+    await page.goto(base)
+    await expect(
+      page.getByRole('link', { name: /^Sou paciente/ }),
+    ).toHaveAttribute('href', '/login?acesso=paciente')
+    await expect(
+      page.getByRole('link', { name: /^Sou médico/ }),
+    ).toHaveAttribute('href', '/login?acesso=medico')
+    await page.goto(base + '/login?acesso=paciente')
+    await page.getByRole('button', { name: 'Explorar demonstração' }).click()
+    await page.getByRole('link', { name: 'Evolução', exact: true }).click()
+    await page.getByRole('link', { name: 'Compartilhar evolução' }).click()
+    await expect(page.getByLabel('Código do médico')).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Buscar médico' }),
+    ).toBeDisabled()
     assert.deepEqual(writes, [])
     assert.deepEqual(errors, [])
   })

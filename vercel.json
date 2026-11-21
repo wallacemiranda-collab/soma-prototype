@@ -1,4 +1,30 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "soma-prototype-nc87\\.vercel\\.app" }],
+      "destination": "https://endoplus.vercel.app/",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "endo-plus\\.vercel\\.app" }],
+      "destination": "https://endoplus.vercel.app/",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "soma-prototype-nc87\\.vercel\\.app" }],
+      "destination": "https://endoplus.vercel.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "endo-plus\\.vercel\\.app" }],
+      "destination": "https://endoplus.vercel.app/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

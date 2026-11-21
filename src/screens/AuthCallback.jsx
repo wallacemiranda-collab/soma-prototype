@@ -3,7 +3,7 @@ import BrandMark from '../components/BrandMark'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function AuthCallback() {
-  const { isLoading, isAuthenticated, isDemo } = useAuth()
+  const { isLoading, isAuthenticated, isDemo, accessMode } = useAuth()
   const location = useLocation()
   const failed =
     new URLSearchParams(location.search).has('error') ||
@@ -15,7 +15,9 @@ export default function AuthCallback() {
       </p>
     )
   if (!failed && isAuthenticated && !isDemo)
-    return <Navigate to="/home" replace />
+    return (
+      <Navigate to={accessMode === 'doctor' ? '/medico' : '/home'} replace />
+    )
   return (
     <main className="mx-auto min-h-dvh max-w-[430px] bg-mist px-6 py-10">
       <BrandMark compact />

@@ -82,6 +82,32 @@ export default function Landing() {
           </div>
         </section>
 
+        <section className="px-6 pt-7" aria-label="Escolha seu acesso">
+          <h2 className="text-xl font-semibold">
+            Como você quer usar o Endo +?
+          </h2>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <Link
+              to="/login?acesso=paciente"
+              className="rounded-2xl bg-white p-4 font-semibold text-soma-800 shadow-card"
+            >
+              Sou paciente
+              <span className="mt-2 block text-xs font-normal leading-5 text-soma-600">
+                Meu histórico e meus compartilhamentos
+              </span>
+            </Link>
+            <Link
+              to="/login?acesso=medico"
+              className="rounded-2xl bg-soma-800 p-4 font-semibold text-white shadow-card"
+            >
+              Sou médico
+              <span className="mt-2 block text-xs font-normal leading-5 text-soma-100">
+                Pacientes que autorizaram meu acesso
+              </span>
+            </Link>
+          </div>
+        </section>
+
         <section className="px-6 py-7">
           <div className="grid grid-cols-3 gap-3">
             {proofPoints.map((item) => (

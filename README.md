@@ -2,18 +2,29 @@
 
 Aplicativo mobile-first para o piloto com pacientes da Clínica Endócrinos, em React, Vite, Tailwind CSS e Supabase.
 
-Endereço público: [Endo +](https://endo-plus.vercel.app/).
+Endereço público: [Endo +](https://endoplus.vercel.app/).
+
+Os endereços antigos `soma-prototype-nc87.vercel.app` e `endo-plus.vercel.app`
+redirecionam para o endereço oficial, preservando o caminho e os parâmetros.
+A mudança de domínio não altera contas nem registros; o navegador pode pedir
+um novo login porque as sessões são armazenadas separadamente por domínio.
 
 ## Fluxo do paciente
 
 - Cadastro por e-mail, confirmação e login com senha.
 - Recuperação de acesso e definição de uma nova senha pelo link enviado por e-mail.
 - Perfil e objetivos pessoais editáveis.
+- Data de nascimento e sexo opcionais em Meu registro e Perfil, salvos na conta.
 - Registros de peso, cintura, sono, atividade, água e bem-estar, com uma anotação por data.
 - Hábitos marcados por dia, compartilhados entre Início e Hábitos.
 - Histórico por período, com gráfico das medidas registradas.
 - Educação com links reais para o canal do Dr. Wallace Miranda.
 - Sessão persistente, telas protegidas e logout.
+- Entradas de paciente e médico, com a mesma autenticação e áreas distintas.
+- Cadastro profissional declarado (nome, CRM e UF), com código próprio.
+- Paciente autoriza vários médicos por 7, 30 ou 90 dias, ou até revogar.
+- Médico consulta somente os pacientes que autorizaram o acesso, sem editar registros.
+- Todo o histórico é carregado em páginas, inclusive registros com mais de um ano.
 
 Nenhum registro de paciente usa `localStorage` como banco. Em contas reais, dados são gravados no Supabase e as políticas RLS restringem leituras e escritas ao próprio usuário. As consultas também incluem filtros explícitos por usuário autenticado.
 
@@ -50,7 +61,33 @@ Veja [SUPABASE_SETUP.md](SUPABASE_SETUP.md) para o esquema, as URLs de retorno e
 
 Veja [TESTING.md](TESTING.md) para os testes de navegador, a checagem do site publicado e os limites de cada verificação. As suítes de interface usam contas sintéticas e não alteram os dados dos pacientes.
 
-O login Google fica oculto até o provedor estar configurado e `VITE_GOOGLE_AUTH_ENABLED=true`. Cobranças, consultas e painel profissional não fazem parte desta etapa do piloto.
+O login Google fica oculto até o provedor estar configurado e `VITE_GOOGLE_AUTH_ENABLED=true`. Cobranças e consultas médicas não fazem parte desta etapa do piloto.
+
+## Compartilhamento com médicos
+
+Na entrada **Sou médico**, o profissional conclui seu cadastro e fornece o código
+ao paciente. O paciente abre **Compartilhar evolução**, busca esse código,
+confere nome e CRM declarados, escolhe o prazo e confirma a autorização.
+Nenhum paciente é associado automaticamente. O e-mail da conta não é incluído
+no perfil compartilhado. A seleção de entrada serve apenas à navegação; não é
+uma permissão administrativa nem usa `user_metadata` para autorizar leituras.
+
+O médico pode personalizar seu código com 6 a 24 letras e números (por exemplo,
+`DRWALLACE`). A busca ignora maiúsculas/minúsculas, espaços e hífens. O código
+precisa estar disponível; códigos anteriores ficam reservados ao titular para
+evitar que outro profissional assuma um identificador antigo. As autorizações
+existentes continuam vinculadas ao UUID da conta, sem mudar com o código.
+
+O CRM tem validação de formato, não consulta automática ao conselho. Não
+apresente o cadastro como identidade profissional verificada. Nome e CRM ficam
+imutáveis pela API após o cadastro. A revisão de identidade e um processo de
+correção administrativa ainda precisam ser definidos para a operação comercial.
+
+A revogação bloqueia novas leituras no banco imediatamente. A tela médica
+reconfere a autorização ao receber foco e a cada 30 segundos, limpando os dados
+se o acesso não puder ser confirmado. Isso não apaga cópias obtidas anteriormente.
+Esta entrega não constitui prontuário certificado, teleconsulta, diagnóstico,
+cobrança integrada ou conclusão das adequações jurídicas e operacionais.
 
 ## Marca
 

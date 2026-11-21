@@ -13,16 +13,22 @@ function fixture(
     from(table) {
       const call = { table, filters: [] }
       calls.push(call)
-      const response = () => ({
-        data:
+      const response = () => {
+        const data =
           call.values ??
           (table === 'profiles'
             ? 'profile' in options
               ? options.profile
               : { id: user.id, full_name: 'Patient A' }
-            : []),
-        error: options.errors?.[table] ?? null,
-      })
+            : (options.rows?.[table] ?? []))
+        return {
+          data:
+            Array.isArray(data) && call.range
+              ? data.slice(call.range[0], call.range[1] + 1)
+              : data,
+          error: options.errors?.[table] ?? null,
+        }
+      }
       const query = {
         select() {
           return query
@@ -36,7 +42,11 @@ function fixture(
           return query
         },
         order(key, options) {
-          call.order = [key, options]
+          call.orders = [...(call.orders ?? []), [key, options]]
+          return query
+        },
+        range(from, to) {
+          call.range = [from, to]
           return query
         },
         limit(value) {
@@ -96,6 +106,8 @@ test('habit and profile writes cannot target another patient', async () => {
   await repository.saveHabit(localDate(), 'sleep', false)
   await repository.saveProfile({
     full_name: 'Patient A',
+    birth_date: '1992-02-29',
+    sex: 'female',
     id: 'patient-b',
     email: 'another@example.invalid',
   })
@@ -103,6 +115,8 @@ test('habit and profile writes cannot target another patient', async () => {
   assert.equal(calls[0].values.value, 0)
   assert.equal(calls[0].options.onConflict, 'user_id,logged_at,habit_key')
   assert.equal(calls[1].values.id, 'patient-a')
+  assert.equal(calls[1].values.birth_date, '1992-02-29')
+  assert.equal(calls[1].values.sex, 'female')
   assert.equal('email' in calls[1].values, false)
   await assert.rejects(repository.saveHabit(localDate(), 'invalid', true))
 })
@@ -152,19 +166,53 @@ test('old authenticated accounts create only their own missing profile', async (
   assert.equal(calls[3].options.onConflict, 'id')
 })
 
-test('reads have bounded history and reject an expired authenticated session', async () => {
+test('history reads use bounded pages and reject an expired authenticated session', async () => {
   const { repository, client, calls } = fixture()
   await repository.load()
-  assert.equal(calls[1].minimum[0], 'entry_date')
-  assert.equal(calls[1].limit, 366)
-  assert.equal(calls[2].minimum[0], 'logged_at')
-  assert.equal(calls[2].limit, 1464)
-  assert.deepEqual(calls[1].order, ['entry_date', { ascending: false }])
+  assert.deepEqual(calls[1].range, [0, 499])
+  assert.deepEqual(calls[2].range, [0, 499])
+  assert.deepEqual(calls[1].orders[0], ['entry_date', { ascending: false }])
+  assert.deepEqual(calls[1].orders[1], ['id', { ascending: false }])
   client.auth.getUser = async () => ({
     data: { user: { id: 'patient-a' } },
     error: new Error('Expired'),
   })
   calls.length = 0
   await assert.rejects(repository.load())
+  assert.equal(calls.length, 0)
+})
+
+test('all historical records are accessible beyond one API page or one year', async () => {
+  const entries = Array.from({ length: 501 }, (_, index) => ({
+    id: `entry-${index}`,
+    entry_date: '2020-01-01',
+    weight_kg: 80,
+  }))
+  const { repository, calls } = fixture(undefined, {
+    rows: { metabolic_entries: entries },
+  })
+  const data = await repository.load()
+  assert.equal(data.entries.length, 501)
+  const reads = calls.filter((call) => call.table === 'metabolic_entries')
+  assert.deepEqual(
+    reads.map((call) => call.range),
+    [
+      [0, 499],
+      [500, 999],
+    ],
+  )
+  assert.ok(reads.every((call) => call.minimum === undefined))
+})
+
+test('invalid personal details cannot issue a profile write', async () => {
+  const { repository, calls } = fixture()
+  await assert.rejects(
+    repository.saveProfile({ full_name: 'Patient', birth_date: '2025-02-29' }),
+    /Data de nascimento/,
+  )
+  await assert.rejects(
+    repository.saveProfile({ full_name: 'Patient', sex: 'invalid' }),
+    /Sexo/,
+  )
   assert.equal(calls.length, 0)
 })

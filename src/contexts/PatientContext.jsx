@@ -17,6 +17,8 @@ function demoData() {
   return {
     profile: {
       full_name: 'Paciente demonstração',
+      birth_date: null,
+      sex: null,
       goal_weight: null,
       weekly_exercise_goal: null,
       sleep_goal_hours: null,
@@ -116,7 +118,11 @@ export function PatientProvider({ children }) {
   async function saveProfile(values) {
     if (isDemo) throw new Error('A demonstração não altera dados de conta.')
     const request = generation.current
-    const profile = await patientRepository.saveProfile(values)
+    const profile = await patientRepository.saveProfile({
+      ...data.profile,
+      ...values,
+      full_name: values.full_name ?? fullName,
+    })
     if (generation.current === request)
       setData((current) => ({ ...current, profile }))
   }

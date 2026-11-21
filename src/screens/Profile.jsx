@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import MetabolicCard from '../components/MetabolicCard'
+import PersonalDetailsFields from '../components/PersonalDetailsFields'
 import { Feedback, FormField, PrimaryButton } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { usePatient } from '../contexts/PatientContext'
@@ -19,6 +20,8 @@ export default function Profile() {
   useEffect(() => {
     setValues({
       full_name: fullName,
+      birth_date: profile?.birth_date ?? '',
+      sex: profile?.sex ?? '',
       goal_weight: profile?.goal_weight ?? '',
       weekly_exercise_goal: profile?.weekly_exercise_goal ?? '',
       sleep_goal_hours: profile?.sleep_goal_hours ?? '',
@@ -59,6 +62,12 @@ export default function Profile() {
   return (
     <>
       <AppHeader title="Meu perfil" simple />
+      <Link
+        to="/compartilhar"
+        className="mb-5 block rounded-2xl bg-soma-100 p-4 font-semibold text-soma-800"
+      >
+        Compartilhar com médicos
+      </Link>
       <section className="mb-6 flex items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-soma-800 text-xl font-semibold text-white">
           {initials(fullName)}
@@ -85,6 +94,13 @@ export default function Profile() {
                 ...current,
                 full_name: event.target.value,
               }))
+            }
+          />
+          <PersonalDetailsFields
+            values={values}
+            disabled={pending || isDemo}
+            onChange={(changes) =>
+              setValues((current) => ({ ...current, ...changes }))
             }
           />
           <FormField
@@ -158,6 +174,14 @@ export default function Profile() {
       >
         {isDemo ? 'Sair da demonstração' : 'Sair da conta'}
       </button>
+      {!isDemo && (
+        <Link
+          to="/medico"
+          className="mt-3 block py-3 text-center text-sm font-semibold text-soma-600"
+        >
+          Acessar área médica
+        </Link>
+      )}
     </>
   )
 }

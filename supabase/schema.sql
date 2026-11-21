@@ -4,6 +4,8 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text check (char_length(full_name) between 1 and 100),
   email text,
+  birth_date date check (birth_date between date '0001-01-01' and current_date),
+  sex text check (sex in ('female', 'male', 'intersex', 'not_informed')),
   goal_weight numeric check (goal_weight between 0.1 and 800),
   weekly_exercise_goal integer check (weekly_exercise_goal between 0 and 10080),
   sleep_goal_hours numeric check (sleep_goal_hours between 0 and 24),

@@ -26,6 +26,10 @@ import {
   ClinicalHub,
   ClinicalModuleScreen,
 } from './screens/ClinicalPreview'
+import {
+  ClinicalDoctorWorkspace,
+  ClinicalPatientWorkspace,
+} from './screens/ClinicalWorkspace'
 
 export default function App() {
   useEffect(() => {
@@ -57,8 +61,13 @@ export default function App() {
               element={<ClinicalModuleScreen />}
             />
             <Route path="/previa/medico" element={<ClinicalDoctorPreview />} />
+            <Route path="/cuidados" element={<ClinicalPatientWorkspace />} />
           </Route>
           <Route element={<DoctorShell />}>
+            <Route
+              path="/profissional/pacientes/:patientId/cuidados"
+              element={<ClinicalDoctorWorkspace />}
+            />
             <Route path="/profissional" element={<DoctorDashboard />} />
             <Route
               path="/profissional/pacientes/:patientId"

@@ -5,6 +5,7 @@ import EvolutionGraph from '../components/EvolutionGraph'
 import MetabolicCard from '../components/MetabolicCard'
 import { usePatient } from '../contexts/PatientContext'
 import { ClinicalEvolution } from './ClinicalPreview'
+import { ClinicalAccountEvolution } from './ClinicalWorkspace'
 import {
   anthropometryReferences,
   entryAnthropometry,
@@ -22,6 +23,7 @@ export default function Evolution() {
     <>
       <EvolutionContent entries={entries} habitLogs={habitLogs} />
       <ClinicalEvolution />
+      <ClinicalAccountEvolution />
     </>
   )
 }

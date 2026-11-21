@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { clinicalRecordTypes, localDateTime } from '../lib/clinicalModules'
 import { localDate, formatNumber } from '../lib/patientData'
 import { Feedback, FormField, PrimaryButton, SelectField } from './ui'
@@ -17,35 +17,54 @@ function initialValues(kind) {
     ]),
   )
 }
-export function ClinicalRecordForm({ kind, onSave, plan }) {
+export function ClinicalRecordForm({ kind, onSave, plan, demo = true }) {
   const [values, setValues] = useState(() => initialValues(kind))
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [pending, setPending] = useState(false)
+  const busy = useRef(false)
+  const requestId = useRef(crypto.randomUUID())
   const definition = clinicalRecordTypes[kind]
   return (
     <form
       className="space-y-4"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault()
+        if (busy.current) return
+        busy.current = true
+        setPending(true)
         setError('')
         setMessage('')
         try {
-          onSave(kind, values)
+          await onSave(kind, values, requestId.current)
+          requestId.current = crypto.randomUUID()
           setValues(initialValues(kind))
           setMessage(
-            'Registro fictício salvo nesta aba. Nenhum dado enviado ao serviço.',
+            demo
+              ? 'Registro fictício salvo nesta aba. Nenhum dado enviado ao serviço.'
+              : 'Registro salvo no seu histórico.',
           )
         } catch (failure) {
-          setError(failure.message || 'Não foi possível salvar a simulação.')
+          setError(
+            failure.code === '40001'
+              ? 'O acompanhamento mudou. Atualize a página antes de salvar novamente.'
+              : failure.code === '42501'
+                ? 'A autorização ou o módulo não está mais ativo. Atualize a página.'
+                : failure.message ||
+                  'Não foi possível salvar. Seus valores foram preservados.',
+          )
+        } finally {
+          busy.current = false
+          setPending(false)
         }
       }}
     >
       <h2 className="font-semibold">{definition.title}</h2>
       {kind === 'injection' && (
         <p className="rounded-xl bg-soma-50 p-3 text-sm">
-          Esquema fictício: {plan.medication},{' '}
-          {formatNumber(plan.dose_mg, ' mg')}. O registro guarda esta versão,
-          sem alterar aplicações anteriores.
+          {demo ? 'Esquema fictício' : 'Esquema informado pelo médico'}:{' '}
+          {plan.medication}, {formatNumber(plan.dose_mg, ' mg')}. O registro
+          guarda esta versão, sem alterar aplicações anteriores.
         </p>
       )}
       {definition.fields.map((field) => {
@@ -54,12 +73,14 @@ export function ClinicalRecordForm({ kind, onSave, plan }) {
           label: field.label,
           value: values[field.key],
           required: !field.optional,
+          disabled: pending,
           onChange: (event) => {
             setValues((current) => ({
               ...current,
               [field.key]: event.target.value,
             }))
             setMessage('')
+            requestId.current = crypto.randomUUID()
           },
         }
         return field.type === 'select' ? (
@@ -90,18 +111,21 @@ export function ClinicalRecordForm({ kind, onSave, plan }) {
         )
       })}
       <p className="text-xs leading-5 text-soma-600">
-        Horário local do aparelho. Limites de digitação provisórios, sujeitos à
-        revisão clínica. Use apenas valores fictícios.
+        {demo
+          ? 'Horário local do aparelho. Limites de digitação provisórios, sujeitos à revisão clínica. Use apenas valores fictícios.'
+          : 'O instante e o fuso do aparelho acompanham o registro. Não altere seu tratamento com base nestas anotações.'}
       </p>
       <Feedback error={error} message={message} />
-      <PrimaryButton type="submit">
-        Salvar {definition.title.toLocaleLowerCase('pt-BR')}
+      <PrimaryButton type="submit" disabled={pending}>
+        {pending
+          ? 'Salvando...'
+          : `Salvar ${definition.title.toLocaleLowerCase('pt-BR')}`}
       </PrimaryButton>
     </form>
   )
 }
 
-export function ClinicalHistory({ records, moduleId }) {
+export function ClinicalHistory({ records, moduleId, demo = true }) {
   const rows = records
     .filter(
       (row) => !moduleId || clinicalRecordTypes[row.kind].module === moduleId,
@@ -112,7 +136,10 @@ export function ClinicalHistory({ records, moduleId }) {
       ),
     )
   return (
-    <section aria-label="Histórico clínico fictício" className="space-y-3">
+    <section
+      aria-label={demo ? 'Histórico clínico fictício' : 'Histórico clínico'}
+      className="space-y-3"
+    >
       <h2 className="text-lg font-semibold">Histórico preservado</h2>
       {!rows.length && (
         <p className="text-sm text-soma-600">
@@ -157,9 +184,15 @@ export function ClinicalHistory({ records, moduleId }) {
                   Esquema registrado na aplicação
                 </dt>
                 <dd>
-                  {row.plan_snapshot.medication} ·{' '}
-                  {formatNumber(row.plan_snapshot.dose_mg, ' mg')} · versão{' '}
-                  {row.plan_revision}
+                  {row.plan_snapshot ? (
+                    <>
+                      {row.plan_snapshot.medication} ·{' '}
+                      {formatNumber(row.plan_snapshot.dose_mg, ' mg')} · versão{' '}
+                      {row.plan_revision}
+                    </>
+                  ) : (
+                    'Referência indisponível. Atualize o histórico; não inferimos a dose atual.'
+                  )}
                 </dd>
               </div>
             )}

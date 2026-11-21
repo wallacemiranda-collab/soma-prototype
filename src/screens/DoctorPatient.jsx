@@ -5,6 +5,7 @@ import MetabolicCard from '../components/MetabolicCard'
 import { EvolutionContent } from './Evolution'
 import { formatNumber, sexOptions } from '../lib/patientData'
 import { sharingRepository } from '../services/sharingService'
+import { clinicalIntegrationEnabled } from '../config/clinicalPreview'
 
 export default function DoctorPatient() {
   const { patientId } = useParams()
@@ -80,6 +81,14 @@ export default function DoctorPatient() {
       ) : (
         <>
           <MetabolicCard className="mb-6">
+            {clinicalIntegrationEnabled && (
+              <Link
+                to={`/profissional/pacientes/${patientId}/cuidados`}
+                className="mb-4 block py-3 font-semibold text-soma-700"
+              >
+                Consultar acompanhamentos clínicos
+              </Link>
+            )}
             <h1 className="text-2xl font-semibold">{data.profile.full_name}</h1>
             <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
               <div>

@@ -521,7 +521,7 @@ function ModuleContent({ module }) {
     </>
   )
 }
-function GlucoseOverview({ records, config }) {
+export function GlucoseOverview({ records, config, demo = true }) {
   const [context, setContext] = useState('all')
   const readings = records
     .filter(
@@ -610,9 +610,11 @@ function GlucoseOverview({ records, config }) {
       </p>
       {config.low != null && (
         <p className="text-xs">
-          Faixa fictícia configurada pelo médico: {config.low}–{config.high}{' '}
-          mg/dL. Aplicada ao filtro e ao histórico mostrado, sem reclassificar
-          exames.
+          {demo
+            ? 'Faixa fictícia configurada pelo médico'
+            : 'Faixa definida pelo médico'}
+          : {config.low}–{config.high} mg/dL. Aplicada ao filtro e ao histórico
+          mostrado, sem reclassificar exames.
         </p>
       )}
       <p className="text-xs leading-5 text-soma-600">
@@ -630,14 +632,16 @@ function GlucoseOverview({ records, config }) {
     </MetabolicCard>
   )
 }
-function ApplicationOverview({ records, plan }) {
+export function ApplicationOverview({ records, plan, demo = true }) {
   const next = nextApplication(plan, records)
   const last = records
     .filter((row) => row.kind === 'injection')
     .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at))[0]
   return (
     <MetabolicCard className="mb-5 space-y-3">
-      <h2 className="font-semibold">Seu esquema fictício</h2>
+      <h2 className="font-semibold">
+        {demo ? 'Seu esquema fictício' : 'Esquema informado pelo médico'}
+      </h2>
       <p>
         {plan.config.medication} · {formatNumber(plan.config.dose_mg, ' mg')} ·
         intervalo de {plan.config.interval_days} dia(s)

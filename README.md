@@ -14,7 +14,7 @@ um novo login porque as sessões são armazenadas separadamente por domínio.
 - Cadastro por e-mail, confirmação e login com senha.
 - Recuperação de acesso e definição de uma nova senha pelo link enviado por e-mail.
 - Perfil e objetivos pessoais editáveis.
-- Data de nascimento e sexo opcionais em Meu registro e Perfil, salvos na conta.
+- Data de nascimento, sexo e altura opcionais somente no Perfil.
 - Registros de peso, cintura, sono, atividade, água e bem-estar, com uma anotação por data.
 - Hábitos marcados por dia, compartilhados entre Início e Hábitos.
 - Histórico por período, com gráfico das medidas registradas.
@@ -25,10 +25,46 @@ um novo login porque as sessões são armazenadas separadamente por domínio.
 - Paciente autoriza vários médicos e outros profissionais por 7, 30 ou 90 dias, ou até revogar.
 - Cada profissional consulta somente os pacientes que autorizaram seu acesso, sem editar registros.
 - Todo o histórico é carregado em páginas, inclusive registros com mais de um ano.
+- Sono e movimento registrados com duração positiva marcam o hábito da mesma data, sem apagar escolhas manuais.
+- Evolução com gráficos de peso e cintura, IMC e cintura/altura usando a altura vinculada à anotação.
 
 Nenhum registro de paciente usa `localStorage` como banco. Em contas reais, dados são gravados no Supabase e as políticas RLS restringem leituras e escritas ao próprio usuário. As consultas também incluem filtros explícitos por usuário autenticado.
 
-A demonstração é aberta pelo botão **Explorar demonstração**, sem cadastro. Ela usa dados fictícios em memória, mostra um aviso permanente e não aceita medidas pessoais nem alterações de perfil. Sem Supabase configurado, o login real fica indisponível: não há autenticação simulada silenciosa.
+A demonstração é aberta pelo botão **Explorar demonstração**, sem cadastro.
+Seu estado fictício fica no `sessionStorage` da aba e sobrevive a recarga e URLs
+diretas. É possível experimentar medidas, hábitos e altura, sem chamadas de
+gravação ao Supabase. Nome, nascimento, sexo e objetivos da conta não são
+editáveis na simulação; não informe dados reais. Sair da demonstração limpa
+seu cache. Tokens e identidades reais não são guardados nesse cache. Se o
+navegador bloquear o armazenamento, a simulação funciona apenas em memória.
+Sem Supabase configurado, o login real fica indisponível: não há autenticação
+simulada silenciosa.
+
+## Fase 1 em revisão clínica
+
+As mudanças desta fase estão em `codex/fase1-ux`, sem publicação automática em
+produção. Antes de usar contas reais nesta versão, é necessário revisar e
+aplicar `supabase/phase1-height.sql`. Não aponte testes de gravação para contas
+de pacientes. O modo demonstração não precisa dessa migração.
+
+Altura é opcional, em centímetros. A faixa de entrada de 30 a 300 cm é uma
+barreira técnica de digitação, não uma faixa clínica de normalidade, e precisa
+ser revisada junto com a interface. Ao salvar medidas de hoje, a altura atual
+do perfil é copiada para a anotação. Em datas anteriores, somente uma altura
+já registrada é mantida; não há preenchimento retroativo. Alterar ou limpar
+a altura do perfil não modifica as referências das anotações já salvas.
+
+Os cálculos são funções puras em `src/lib/anthropometry.js`, sem categorias de
+risco ou diagnóstico automático. Testes reproduzem os exemplos publicados:
+
+- IMC: 70 kg e 175 cm resultam em 22,9 kg/m², conforme a [OMS, TRS 894, seção 2.3](https://iris.who.int/bitstream/handle/10665/42330/WHO_TRS_894.pdf?sequence=1).
+- Cintura/altura: 96,5 cm / 170 cm resulta em 0,57, conforme a [NICE NG246](https://www.nice.org.uk/guidance/ng246/chapter/Identifying-and-assessing-overweight-obesity-and-central-adiposity).
+
+Para revisar, inicie a aplicação local e abra **Explorar demonstração**. Visite
+Educação pela URL e recarregue; a simulação deve continuar. Em Perfil, altere
+uma altura fictícia; em Meu registro, salve medidas fictícias de hoje e confira
+as métricas e o gráfico de cintura em Evolução. Registros antigos sem altura
+devem indicar que não há cálculo. Só publique depois da validação clínica.
 
 ## Desenvolvimento
 

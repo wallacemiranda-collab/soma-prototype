@@ -8,7 +8,8 @@ import {
 } from 'react'
 import { useAuth } from './AuthContext'
 import { demoStore } from '../lib/demoStore'
-import { validateEntry } from '../lib/patientData'
+import { localDate, optionalNumber, validateEntry } from '../lib/patientData'
+import { entryHeight, heightBounds } from '../lib/anthropometry'
 import { patientRepository } from '../services/somaDataService'
 
 const PatientContext = createContext(null)
@@ -54,9 +55,21 @@ export function PatientProvider({ children }) {
 
   async function saveEntry(values) {
     const request = generation.current
+    const existing = data.entries.find(
+      (entry) => entry.entry_date === values.entry_date,
+    )
+    const record = {
+      ...values,
+      height_cm: entryHeight(
+        data.profile,
+        existing,
+        values.entry_date,
+        localDate(),
+      ),
+    }
     const entry = isDemo
-      ? { ...validateEntry(values), id: `demo-${values.entry_date}` }
-      : await patientRepository.saveEntry(values)
+      ? { ...validateEntry(record), id: `demo-${values.entry_date}` }
+      : await patientRepository.saveEntry(record)
     if (generation.current === request) {
       const update = (current) => ({
         ...current,
@@ -95,13 +108,22 @@ export function PatientProvider({ children }) {
   }
 
   async function saveProfile(values) {
-    if (isDemo) throw new Error('A demonstração não altera dados de conta.')
     const request = generation.current
-    const profile = await patientRepository.saveProfile({
-      ...data.profile,
-      ...values,
-      full_name: values.full_name ?? fullName,
-    })
+    const profile = isDemo
+      ? {
+          ...data.profile,
+          height_cm: optionalNumber(
+            values.height_cm,
+            heightBounds.min,
+            heightBounds.max,
+            'Altura',
+          ),
+        }
+      : await patientRepository.saveProfile({
+          ...data.profile,
+          ...values,
+          full_name: values.full_name ?? fullName,
+        })
     if (generation.current === request)
       updateData((current) => ({ ...current, profile }))
   }

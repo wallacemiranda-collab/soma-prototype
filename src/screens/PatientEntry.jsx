@@ -10,7 +10,9 @@ import {
   optionalNumber,
   validateDate,
   validateEntry,
+  formatNumber,
 } from '../lib/patientData'
+import { entryHeight } from '../lib/anthropometry'
 
 const fields = [
   { key: 'weight_kg', label: 'Peso (kg)', min: 0.1, max: 800, step: 'any' },
@@ -36,7 +38,7 @@ const fields = [
 export default function PatientEntry() {
   const [params] = useSearchParams()
   const { isDemo } = useAuth()
-  const { entries, saveEntry } = usePatient()
+  const { entries, profile, saveEntry } = usePatient()
   const [date, setDate] = useState(() => {
     try {
       return validateDate(params.get('data') || localDate())
@@ -49,6 +51,7 @@ export default function PatientEntry() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const existing = entries.find((entry) => entry.entry_date === date)
+  const height = entryHeight(profile, existing, date, localDate())
   useEffect(() => {
     setValues(
       Object.fromEntries(
@@ -139,6 +142,14 @@ export default function PatientEntry() {
           <p className="text-xs leading-5 text-soma-600">
             Uma anotação por dia. Salvar novamente na mesma data atualiza o
             registro existente.
+          </p>
+          <p className="text-xs leading-5 text-soma-600">
+            Altura de referência: {formatNumber(height, ' cm')}.{' '}
+            <Link to="/perfil" className="font-semibold underline">
+              Ajustar altura no Perfil
+            </Link>
+            . Para datas anteriores, usamos somente a altura que já estava
+            vinculada à anotação.
           </p>
           {isDemo && (
             <p className="rounded-xl bg-soma-100 p-3 text-sm text-soma-800">

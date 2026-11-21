@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePatient } from '../contexts/PatientContext'
 import { brand } from '../config/brand'
 import { initials } from '../lib/patientData'
+import { heightBounds } from '../lib/anthropometry'
 
 export default function Profile() {
   const { user, isDemo, signOut } = useAuth()
@@ -22,6 +23,7 @@ export default function Profile() {
       full_name: fullName,
       birth_date: profile?.birth_date ?? '',
       sex: profile?.sex ?? '',
+      height_cm: profile?.height_cm ?? '',
       goal_weight: profile?.goal_weight ?? '',
       weekly_exercise_goal: profile?.weekly_exercise_goal ?? '',
       sleep_goal_hours: profile?.sleep_goal_hours ?? '',
@@ -29,13 +31,17 @@ export default function Profile() {
   }, [profile, fullName])
   async function submit(event) {
     event.preventDefault()
-    if (pending || isDemo) return
+    if (pending) return
     setPending(true)
     setError('')
     setMessage('')
     try {
       await saveProfile(values)
-      setMessage('Perfil atualizado.')
+      setMessage(
+        isDemo
+          ? 'Altura fictícia atualizada nesta aba. Nenhum dado foi enviado ao serviço.'
+          : 'Perfil atualizado.',
+      )
     } catch (failure) {
       setError(
         failure instanceof Error
@@ -104,6 +110,27 @@ export default function Profile() {
             }
           />
           <FormField
+            label="Altura (cm, opcional)"
+            type="number"
+            inputMode="decimal"
+            min={heightBounds.min}
+            max={heightBounds.max}
+            step="any"
+            value={values.height_cm ?? ''}
+            disabled={pending}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                height_cm: event.target.value,
+              }))
+            }
+          />
+          <p className="text-xs leading-5 text-soma-600">
+            Informe em centímetros, por exemplo 170. A altura será vinculada às
+            anotações de hoje quando você salvar as medidas. Alterar o perfil
+            não recalcula registros antigos.
+          </p>
+          <FormField
             label="Meta pessoal de peso (kg, opcional)"
             type="number"
             min="0.1"
@@ -153,7 +180,13 @@ export default function Profile() {
             que acompanha você.
           </p>
           <Feedback error={error} message={message} />
-          <PrimaryButton type="submit" disabled={pending || isDemo}>
+          {isDemo && (
+            <p className="text-xs leading-5 text-soma-600">
+              Use uma altura fictícia para explorar a simulação. Dados pessoais
+              e objetivos da conta não são editados neste modo.
+            </p>
+          )}
+          <PrimaryButton type="submit" disabled={pending}>
             {pending ? 'Aguarde...' : 'Salvar perfil'}
           </PrimaryButton>
         </form>

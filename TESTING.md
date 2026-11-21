@@ -21,11 +21,26 @@ A suíte inicia um Vite temporário na porta 4174, usa o domínio fictício `htt
 
 Cobre registro e edição de medidas, campos vazios e limites, recarga, separação por data, hábitos, erros de gravação e carregamento, perfil, troca de conta, logout, confirmação de cadastro, recuperação de senha e navegação em 320 px.
 
-Inclui data de nascimento e sexo opcionais: persistência entre Meu registro e
-Perfil, remoção dos valores, bloqueio de datas futuras, preservação dos
-objetivos existentes e recuperação após falhas de gravação. Se o perfil for
-salvo e a medida falhar, a interface informa a gravação parcial e permite
-repetir o envio sem duplicar o registro.
+Nascimento e sexo são editados somente no Perfil. Os testes conferem a
+ausência desses campos no diário, validação, remoção, falhas de gravação e
+preservação do perfil ao salvar medidas. O diário não faz mais uma gravação
+de perfil antes de salvar as medidas.
+
+A Fase 1 acrescenta persistência da demonstração por aba, recarga e URLs
+diretas, limpeza ao sair e transição sem misturar dados com contas reais.
+A demonstração simula medidas, hábitos e altura sem gravações no backend.
+Sono e movimento automáticos são derivados da anotação do mesmo dia;
+zero ou remoção das medidas não apaga uma marcação manual existente.
+
+`tests/anthropometry.test.js` confere os exemplos publicados da OMS e NICE,
+ausência de altura, entradas inválidas e referências históricas. Não verifica
+adequação clínica dos limites de entrada nem interpretação para grupos
+específicos. `tests/browser/phase1.spec.js` cobre altura no Perfil, medidas,
+gráficos, falhas, histórico sem preenchimento retroativo e demonstração.
+
+A verificação automatizada desta entrega usa Chrome, incluindo largura de
+320 px. A conferência em aparelhos reais com Safari/iPhone e Android Chrome
+continua pendente, assim como a aprovação clínica antes da publicação.
 
 Os testes de compartilhamento cobrem as duas entradas, cadastro profissional,
 busca por código, autorização explícita, vários médicos, consulta somente
@@ -102,6 +117,12 @@ independentes, renovação sem duplicar, revogação, expiração e leitura sem
 escrita, com rollback integral. A suíte de interface também cobre a equipe com
 quatro profissionais, recarga, entrada profissional, cadastro não médico e
 personalização do código. Os links antigos `/medico` continuam cobertos.
+
+Após aprovação de publicação e `supabase/phase1-height.sql`, execute
+`supabase/verify-phase1-height.sql`. Na preparação desta entrega, o script
+e a migração foram executados juntos dentro de uma transação revertida;
+`phase1_height_passed` foi confirmado e as colunas de altura permaneceram
+ausentes na produção. Não se trata de validação clínica nem de login real.
 
 ## Compilação
 

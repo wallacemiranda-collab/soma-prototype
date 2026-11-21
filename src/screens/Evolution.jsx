@@ -5,6 +5,10 @@ import EvolutionGraph from '../components/EvolutionGraph'
 import MetabolicCard from '../components/MetabolicCard'
 import { usePatient } from '../contexts/PatientContext'
 import {
+  anthropometryReferences,
+  entryAnthropometry,
+} from '../lib/anthropometry'
+import {
   dateBefore,
   formatDate,
   formatNumber,
@@ -23,12 +27,20 @@ export function EvolutionContent({ entries, habitLogs, readOnly = false }) {
     (entry) => !days || entry.entry_date >= dateBefore(days - 1),
   )
   const weights = visible
-    .filter((entry) => entry.weight_kg !== null)
+    .filter((entry) => entry.weight_kg != null)
     .slice()
     .reverse()
   const current = weights.at(-1)?.weight_kg
   const difference =
     weights.length > 1 ? Number(current) - Number(weights[0].weight_kg) : null
+  const waists = visible
+    .filter((entry) => entry.waist_cm != null)
+    .slice()
+    .reverse()
+  const latestWeight = weights.at(-1)
+  const latestWaist = waists.at(-1)
+  const bmi = entryAnthropometry(latestWeight).bmi
+  const ratio = entryAnthropometry(latestWaist).waistHeight
   return (
     <>
       {readOnly ? (
@@ -89,6 +101,61 @@ export function EvolutionContent({ entries, habitLogs, readOnly = false }) {
           </p>
         </MetabolicCard>
       </section>
+      <section
+        aria-label="Medidas derivadas"
+        className="mt-3 grid grid-cols-2 gap-3"
+      >
+        <MetabolicCard>
+          <h2 className="text-sm text-soma-600">IMC do último peso</h2>
+          <p className="mt-2 text-xl font-semibold">
+            {bmi === null ? 'Sem cálculo' : `${formatNumber(bmi)} kg/m²`}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-soma-600">
+            {bmi === null
+              ? 'Precisa de peso e altura na mesma anotação.'
+              : `${formatDate(latestWeight.entry_date)} · altura ${formatNumber(latestWeight.height_cm, ' cm')}`}
+          </p>
+        </MetabolicCard>
+        <MetabolicCard>
+          <h2 className="text-sm text-soma-600">
+            Cintura/altura da última medida
+          </h2>
+          <p className="mt-2 text-xl font-semibold">
+            {ratio === null
+              ? 'Sem cálculo'
+              : new Intl.NumberFormat('pt-BR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }).format(ratio)}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-soma-600">
+            {ratio === null
+              ? 'Precisa de cintura e altura na mesma anotação.'
+              : `${formatDate(latestWaist.entry_date)} · altura ${formatNumber(latestWaist.height_cm, ' cm')}`}
+          </p>
+        </MetabolicCard>
+      </section>
+      <div className="mt-3 text-xs leading-5 text-soma-600">
+        <p>
+          São medidas de acompanhamento, não um diagnóstico. A altura é a
+          registrada em cada anotação; não estimamos alturas ausentes. Este
+          resultado é uma triagem e não substitui avaliação médica. Converse com
+          seu médico.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+          {anthropometryReferences.map((reference) => (
+            <a
+              key={reference.url}
+              href={reference.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              {reference.title}
+            </a>
+          ))}
+        </div>
+      </div>
       <MetabolicCard className="mt-5">
         <h2 className="mb-4 font-semibold">Peso registrado</h2>
         {weights.length ? (
@@ -102,6 +169,22 @@ export function EvolutionContent({ entries, habitLogs, readOnly = false }) {
         ) : (
           <p className="text-sm text-soma-600">
             Ainda não há medidas de peso neste período.
+          </p>
+        )}
+      </MetabolicCard>
+      <MetabolicCard className="mt-5">
+        <h2 className="mb-4 font-semibold">Cintura registrada</h2>
+        {waists.length ? (
+          <EvolutionGraph
+            points={waists.map((entry) => ({
+              day: formatDate(entry.entry_date),
+              value: Number(entry.waist_cm),
+            }))}
+            label="Cintura registrada, em centímetros"
+          />
+        ) : (
+          <p className="text-sm text-soma-600">
+            Ainda não há medidas de cintura neste período.
           </p>
         )}
       </MetabolicCard>
@@ -143,6 +226,10 @@ export function EvolutionContent({ entries, habitLogs, readOnly = false }) {
                   {[
                     ['Peso', formatNumber(entry.weight_kg, ' kg')],
                     ['Cintura', formatNumber(entry.waist_cm, ' cm')],
+                    [
+                      'Altura de referência',
+                      formatNumber(entry.height_cm, ' cm'),
+                    ],
                     [
                       'Sono',
                       formatNumber(

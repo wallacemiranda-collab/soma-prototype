@@ -4,7 +4,9 @@ import {
   localDate,
   validateDate,
   validateEntry,
+  optionalNumber,
 } from './patientData.js'
+import { heightBounds } from './anthropometry.js'
 
 export const demoStorageKey = 'endo-demo-v1'
 const demoProfile = {
@@ -14,6 +16,7 @@ const demoProfile = {
   goal_weight: null,
   weekly_exercise_goal: null,
   sleep_goal_hours: null,
+  height_cm: null,
 }
 
 export function demoSession() {
@@ -28,12 +31,13 @@ export function demoSession() {
 
 export function createDemoData() {
   return {
-    profile: { ...demoProfile },
+    profile: { ...demoProfile, height_cm: 170 },
     entries: [0, 7, 14].map((days, index) => ({
       id: `demo-${dateBefore(days)}`,
       entry_date: dateBefore(days),
       weight_kg: 82 + index * 0.4,
-      waist_cm: null,
+      waist_cm: 96.5 + index,
+      height_cm: 170,
       sleep_minutes: 420,
       activity_minutes: 20,
       water_liters: 1.5,
@@ -86,7 +90,19 @@ function normalize(data) {
   )
     throw new Error('Duplicate demonstration records')
   // Never restore account identities, tokens or personal details from this cache.
-  return { profile: { ...demoProfile }, entries, habitLogs }
+  return {
+    profile: {
+      ...demoProfile,
+      height_cm: optionalNumber(
+        data.profile?.height_cm,
+        heightBounds.min,
+        heightBounds.max,
+        'Altura',
+      ),
+    },
+    entries,
+    habitLogs,
+  }
 }
 
 function browserStorage() {

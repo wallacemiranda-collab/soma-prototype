@@ -1,3 +1,5 @@
+import { heightBounds } from './anthropometry.js'
+
 export const habitDefinitions = [
   {
     id: 'sleep',
@@ -80,7 +82,15 @@ export function optionalNumber(value, min, max, label, integer = false) {
 }
 
 export function validateEntry(values) {
-  const result = { entry_date: validateDate(values.entry_date) }
+  const result = {
+    entry_date: validateDate(values.entry_date),
+    height_cm: optionalNumber(
+      values.height_cm,
+      heightBounds.min,
+      heightBounds.max,
+      'Altura',
+    ),
+  }
   for (const [key, limits] of Object.entries(numericFields))
     result[key] = optionalNumber(values[key], ...limits)
   if (!Object.keys(numericFields).some((key) => result[key] !== null))
@@ -123,6 +133,12 @@ export function validateProfile(values) {
   return {
     full_name: fullName,
     ...validatePersonalDetails(values),
+    height_cm: optionalNumber(
+      values.height_cm,
+      heightBounds.min,
+      heightBounds.max,
+      'Altura',
+    ),
     goal_weight: optionalNumber(values.goal_weight, 0.1, 800, 'Meta de peso'),
     weekly_exercise_goal: optionalNumber(
       values.weekly_exercise_goal,

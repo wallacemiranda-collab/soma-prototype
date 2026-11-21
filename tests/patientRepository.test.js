@@ -216,3 +216,34 @@ test('invalid personal details cannot issue a profile write', async () => {
   )
   assert.equal(calls.length, 0)
 })
+
+test('height and reference writes keep ownership and reject invalid values before accessing the backend', async () => {
+  const { repository, calls } = fixture()
+  await repository.saveProfile({
+    full_name: 'Patient A',
+    height_cm: '175',
+    id: 'patient-b',
+  })
+  assert.equal(calls[0].values.height_cm, 175)
+  assert.equal(calls[0].values.id, 'patient-a')
+  await repository.saveEntry({
+    entry_date: localDate(),
+    weight_kg: 70,
+    height_cm: 175,
+    user_id: 'patient-b',
+  })
+  assert.equal(calls[1].values.height_cm, 175)
+  assert.equal(calls[1].values.user_id, 'patient-a')
+  calls.length = 0
+  await assert.rejects(
+    repository.saveProfile({ full_name: 'Patient A', height_cm: 0 }),
+  )
+  await assert.rejects(
+    repository.saveEntry({
+      entry_date: localDate(),
+      weight_kg: 70,
+      height_cm: 0,
+    }),
+  )
+  assert.deepEqual(calls, [])
+})

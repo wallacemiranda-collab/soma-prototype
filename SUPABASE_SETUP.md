@@ -76,6 +76,29 @@ independentes, isolamento e proibição de escrita. As contas sintéticas são
 integralmente revertidas. Resultado: `health_professionals_passed`. Execute
 também os três scripts de verificação anteriores para conferir compatibilidade.
 
+## Altura e métricas da Fase 1
+
+Após a revisão clínica, aplique `supabase/phase1-height.sql` antes de publicar
+o frontend desta fase. O script acrescenta somente `height_cm`, opcional, em
+`profiles` e `metabolic_entries`, com limites técnicos de 30 a 300 cm. Não
+preenche dados antigos nem altera privilégios, códigos ou políticas de acesso.
+O segundo campo guarda a altura de referência da anotação; IMC e razão
+cintura/altura são derivados, nunca salvos como resultados independentes.
+
+`supabase/verify-phase1-height.sql` verifica validação, preservação histórica,
+isolamento entre pacientes e leitura profissional somente com autorização,
+sem conceder escrita. Seus dados sintéticos são revertidos integralmente.
+Resultado esperado: `phase1_height_passed`.
+
+Nesta entrega, a migração foi testada dentro de uma transação revertida no
+Supabase, incluindo as contas sintéticas. Os campos não foram adicionados
+permanentemente ao banco de produção. Aplique somente após a aprovação de
+publicação; a demonstração local funciona sem essa alteração.
+
+O aviso já existente de proteção contra senhas vazadas continua pendente;
+revise a [configuração de segurança de senhas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
+antes de ampliar a operação comercial. Esta fase não altera o plano contratado.
+
 ## URLs dos e-mails de autenticação
 
 Em **Authentication > URL Configuration**, configure:

@@ -52,7 +52,7 @@ test('demo is explicit, shared across screens and cannot save personal records',
   await page.getByRole('link', { name: 'Perfil', exact: true }).first().click()
   await expect(
     page.getByRole('button', { name: 'Salvar perfil' }),
-  ).toBeDisabled()
+  ).toBeEnabled()
   await expect(page.getByLabel('Data de nascimento (opcional)')).toBeDisabled()
   await expect(page.getByLabel('Sexo (opcional)')).toBeDisabled()
   expect(ui.requests).toEqual([])

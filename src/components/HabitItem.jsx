@@ -13,7 +13,7 @@ export default function HabitItem({
   return (
     <button
       type="button"
-      disabled={disabled}
+      disabled={disabled || habit.automatic}
       aria-pressed={habit.done}
       onClick={() => onToggle?.(habit.id)}
       className={`flex w-full items-center gap-3 rounded-2xl text-left transition disabled:opacity-50 ${
@@ -29,7 +29,11 @@ export default function HabitItem({
         >
           {habit.title}
         </span>
-        <span className="text-xs text-soma-600">{habit.time}</span>
+        <span className="text-xs text-soma-600">
+          {habit.automatic
+            ? 'Registrado nas medidas deste dia. Edite as medidas para alterar.'
+            : habit.time}
+        </span>
       </span>
       <span
         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${

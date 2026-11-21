@@ -8,11 +8,11 @@ import { usePatient } from '../contexts/PatientContext'
 import { dateBefore, habitsForDate, localDate } from '../lib/patientData'
 
 export default function Habits() {
-  const { habitLogs, saveHabit } = usePatient()
+  const { habitLogs, entries, saveHabit } = usePatient()
   const [date, setDate] = useState(localDate())
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
-  const habits = habitsForDate(habitLogs, date)
+  const habits = habitsForDate(habitLogs, date, entries)
   const completed = habits.filter((habit) => habit.done).length
   async function toggle(id) {
     if (pending) return
@@ -61,7 +61,10 @@ export default function Habits() {
           <HabitRing value={Math.round((completed / habits.length) * 100)} />
         </div>
         <p className="mt-4 text-sm text-soma-100">
-          Marque ou desmarque um hábito para atualizar o registro.
+          Marque ou desmarque um hábito para atualizar o registro. Sono e
+          movimento também são marcados quando há duração maior que zero nas
+          medidas desse dia. Isso indica um registro, não uma avaliação da
+          qualidade.
         </p>
       </MetabolicCard>
       <div className="mt-5">

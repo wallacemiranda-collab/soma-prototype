@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { useAuth } from './AuthContext'
 import { demoStore } from '../lib/demoStore'
+import { validateEntry } from '../lib/patientData'
 import { patientRepository } from '../services/somaDataService'
 
 const PatientContext = createContext(null)
@@ -52,12 +53,10 @@ export function PatientProvider({ children }) {
   }
 
   async function saveEntry(values) {
-    if (isDemo)
-      throw new Error(
-        'A demonstração não salva medidas. Use uma conta para registrar seus dados.',
-      )
     const request = generation.current
-    const entry = await patientRepository.saveEntry(values)
+    const entry = isDemo
+      ? { ...validateEntry(values), id: `demo-${values.entry_date}` }
+      : await patientRepository.saveEntry(values)
     if (generation.current === request) {
       const update = (current) => ({
         ...current,

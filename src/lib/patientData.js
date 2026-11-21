@@ -165,22 +165,36 @@ export function formatDate(value) {
   }).format(new Date(`${value}T12:00:00`))
 }
 
-export function habitsForDate(logs, date) {
-  return habitDefinitions.map((habit) => ({
-    ...habit,
-    done: logs.some(
-      (log) =>
-        log.logged_at === date &&
-        log.habit_key === habit.id &&
-        Number(log.value) > 0,
-    ),
-  }))
+export function habitsForDate(logs, date, entries = []) {
+  const entry = entries.find((value) => value.entry_date === date)
+  return habitDefinitions.map((habit) => {
+    const value = Number(
+      habit.id === 'sleep'
+        ? entry?.sleep_minutes
+        : habit.id === 'movement'
+          ? entry?.activity_minutes
+          : 0,
+    )
+    const automatic = Number.isFinite(value) && value > 0
+    return {
+      ...habit,
+      automatic,
+      done:
+        automatic ||
+        logs.some(
+          (log) =>
+            log.logged_at === date &&
+            log.habit_key === habit.id &&
+            Number(log.value) > 0,
+        ),
+    }
+  })
 }
 
-export function weeklyHabitProgress(logs, now = new Date()) {
+export function weeklyHabitProgress(logs, now = new Date(), entries = []) {
   return Array.from({ length: 7 }, (_, index) => {
     const date = dateBefore(6 - index, now)
-    const completed = habitsForDate(logs, date).filter(
+    const completed = habitsForDate(logs, date, entries).filter(
       (habit) => habit.done,
     ).length
     return {

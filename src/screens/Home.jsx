@@ -19,7 +19,7 @@ export default function Home() {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const today = localDate()
-  const habits = habitsForDate(habitLogs, today)
+  const habits = habitsForDate(habitLogs, today, entries)
   const weight = entries.find((entry) => entry.weight_kg != null)
   const waist = entries.find((entry) => entry.waist_cm != null)
   const completed = habits.filter((habit) => habit.done).length

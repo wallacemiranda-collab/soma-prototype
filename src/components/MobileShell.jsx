@@ -36,7 +36,8 @@ function ShellContent() {
           <div className="mb-6 rounded-xl border border-soma-200 bg-soma-100 p-3 text-sm text-soma-800">
             <p className="font-semibold">Demonstração · dados fictícios</p>
             <p className="mt-1 text-xs">
-              Nenhuma informação de paciente é salva neste modo.
+              Use apenas dados fictícios. A simulação fica nesta aba e não é
+              enviada ao serviço. Não informe dados reais.
             </p>
             <button
               className="mt-2 py-1 font-semibold"

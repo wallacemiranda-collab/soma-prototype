@@ -115,20 +115,11 @@ describe('published Endo +', { timeout: 90000 }, () => {
     await page
       .getByRole('link', { name: 'Registrar medidas', exact: true })
       .click()
-    await expect(page.getByRole('button', { name: /registro$/ })).toBeDisabled()
-    await expect(
-      page.getByLabel('Data de nascimento (opcional)'),
-    ).toBeDisabled()
-    await expect(page.getByLabel('Sexo (opcional)')).toBeDisabled()
-    await expect(
-      page.getByLabel('Sexo (opcional)').locator('option'),
-    ).toHaveText([
-      'Selecione, se desejar',
-      'Feminino',
-      'Masculino',
-      'Intersexo',
-      'Prefiro não informar',
-    ])
+    await expect(page.getByRole('button', { name: /registro$/ })).toBeEnabled()
+    await expect(page.getByLabel('Data de nascimento (opcional)')).toHaveCount(
+      0,
+    )
+    await expect(page.getByLabel('Sexo (opcional)')).toHaveCount(0)
     await page.setViewportSize({ width: 320, height: 800 })
     assert.equal(
       await page.evaluate(

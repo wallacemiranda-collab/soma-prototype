@@ -71,6 +71,44 @@ test('habit completion is isolated by calendar date and never double-counts a ke
   assert.equal(weeklyHabitProgress(logs).length, 7)
 })
 
+test('positive measurements mark only sleep and movement for the matching date', () => {
+  const today = localDate()
+  const entries = [{ entry_date: today, sleep_minutes: 1, activity_minutes: 1 }]
+  const habits = habitsForDate([], today, entries)
+  assert.deepEqual(
+    habits.filter((h) => h.done).map((h) => h.id),
+    ['sleep', 'movement'],
+  )
+  assert.ok(habits.filter((h) => h.done).every((h) => h.automatic))
+  assert.equal(weeklyHabitProgress([], new Date(), entries).at(-1).value, 50)
+  assert.equal(
+    habitsForDate([], dateBefore(1), entries).some((h) => h.done),
+    false,
+  )
+  for (const value of [0, null, undefined, -1, Infinity, 'invalid']) {
+    assert.equal(
+      habitsForDate([], today, [
+        { entry_date: today, sleep_minutes: value, activity_minutes: value },
+      ]).some((h) => h.done),
+      false,
+    )
+  }
+})
+
+test('removing automatic measurements preserves explicit manual habit choices', () => {
+  const today = localDate()
+  const logs = [{ logged_at: today, habit_key: 'movement', value: 1 }]
+  const habits = habitsForDate(logs, today, [
+    { entry_date: today, activity_minutes: 0, sleep_minutes: null },
+  ])
+  assert.equal(habits.find((h) => h.id === 'movement').done, true)
+  assert.equal(habits.find((h) => h.id === 'movement').automatic, false)
+  assert.equal(habits.find((h) => h.id === 'sleep').done, false)
+  assert.deepEqual(logs, [
+    { logged_at: today, habit_key: 'movement', value: 1 },
+  ])
+})
+
 test('backend configuration fails closed and rejects private service keys', () => {
   const env = {
     VITE_SUPABASE_URL: 'https://project.supabase.co',

@@ -110,7 +110,7 @@ export function EvolutionContent({ entries, habitLogs, readOnly = false }) {
           Hábitos marcados · últimos 7 dias
         </h2>
         <EvolutionGraph
-          points={weeklyHabitProgress(habitLogs)}
+          points={weeklyHabitProgress(habitLogs, new Date(), entries)}
           label="Percentual de hábitos marcados por dia"
         />
       </MetabolicCard>

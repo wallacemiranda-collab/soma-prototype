@@ -9,6 +9,7 @@ import { usePatient } from '../contexts/PatientContext'
 import { brand } from '../config/brand'
 import { initials } from '../lib/patientData'
 import { heightBounds } from '../lib/anthropometry'
+import ClinicalPreviewLink from '../components/ClinicalPreviewLink'
 
 export default function Profile() {
   const { user, isDemo, signOut } = useAuth()
@@ -68,6 +69,7 @@ export default function Profile() {
   return (
     <>
       <AppHeader title="Meu perfil" simple />
+      <ClinicalPreviewLink />
       <Link
         to="/compartilhar"
         className="mb-5 block rounded-2xl bg-soma-100 p-4 font-semibold text-soma-800"

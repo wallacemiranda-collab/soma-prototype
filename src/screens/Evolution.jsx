@@ -4,6 +4,7 @@ import AppHeader from '../components/AppHeader'
 import EvolutionGraph from '../components/EvolutionGraph'
 import MetabolicCard from '../components/MetabolicCard'
 import { usePatient } from '../contexts/PatientContext'
+import { ClinicalEvolution } from './ClinicalPreview'
 import {
   anthropometryReferences,
   entryAnthropometry,
@@ -17,7 +18,12 @@ import {
 
 export default function Evolution() {
   const { entries, habitLogs } = usePatient()
-  return <EvolutionContent entries={entries} habitLogs={habitLogs} />
+  return (
+    <>
+      <EvolutionContent entries={entries} habitLogs={habitLogs} />
+      <ClinicalEvolution />
+    </>
+  )
 }
 
 export function EvolutionContent({ entries, habitLogs, readOnly = false }) {

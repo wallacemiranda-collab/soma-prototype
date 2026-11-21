@@ -21,6 +21,11 @@ import Sharing from './screens/Sharing'
 import DoctorShell from './components/DoctorShell'
 import DoctorDashboard from './screens/DoctorDashboard'
 import DoctorPatient from './screens/DoctorPatient'
+import {
+  ClinicalDoctorPreview,
+  ClinicalHub,
+  ClinicalModuleScreen,
+} from './screens/ClinicalPreview'
 
 export default function App() {
   useEffect(() => {
@@ -46,6 +51,12 @@ export default function App() {
             <Route path="/perfil" element={<Profile />} />
             <Route path="/registro" element={<PatientEntry />} />
             <Route path="/compartilhar" element={<Sharing />} />
+            <Route path="/modulos" element={<ClinicalHub />} />
+            <Route
+              path="/modulos/:moduleId"
+              element={<ClinicalModuleScreen />}
+            />
+            <Route path="/previa/medico" element={<ClinicalDoctorPreview />} />
           </Route>
           <Route element={<DoctorShell />}>
             <Route path="/profissional" element={<DoctorDashboard />} />

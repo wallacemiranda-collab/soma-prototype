@@ -7,12 +7,15 @@ import { brand } from '../config/brand'
 import { PatientProvider } from '../contexts/PatientContext'
 import { useAuth } from '../contexts/AuthContext'
 import PatientState from './PatientState'
+import { ClinicalPreviewProvider } from '../contexts/ClinicalPreviewContext'
 
 export default function MobileShell() {
   const { user, isDemo } = useAuth()
   return (
     <PatientProvider key={`${user.id}:${isDemo}`}>
-      <ShellContent />
+      <ClinicalPreviewProvider>
+        <ShellContent />
+      </ClinicalPreviewProvider>
     </PatientProvider>
   )
 }

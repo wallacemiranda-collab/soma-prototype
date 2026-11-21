@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { demoSession, demoStore } from '../lib/demoStore'
+import { clinicalPreviewStore } from '../lib/clinicalPreviewStore'
 import {
   getCurrentSession,
   onAuthStateChange,
@@ -10,6 +11,11 @@ import {
 } from '../services/authService'
 
 const AuthContext = createContext(null)
+
+function clearDemonstration() {
+  demoStore.clear()
+  clinicalPreviewStore.clear()
+}
 
 export function AuthProvider({ children }) {
   const [restoredDemo] = useState(() => Boolean(demoStore.read()))
@@ -44,7 +50,7 @@ export function AuthProvider({ children }) {
     function applySession(nextSession, event = 'INITIAL_SESSION') {
       if (!active) return
       if (nextSession || event !== 'INITIAL_SESSION') {
-        demoStore.clear()
+        clearDemonstration()
         setSession(nextSession)
         setIsDemo(false)
       } else {
@@ -77,7 +83,7 @@ export function AuthProvider({ children }) {
   async function signIn(email, password) {
     const result = await signInWithEmail(email, password)
     if (!result.error && result.data?.session) {
-      demoStore.clear()
+      clearDemonstration()
       setIsDemo(false)
       setSession(result.data.session)
     }
@@ -88,7 +94,7 @@ export function AuthProvider({ children }) {
     const result = await signUpWithEmail(email, password, fullName)
     if (result.error) return result
     if (result.data?.session) {
-      demoStore.clear()
+      clearDemonstration()
       setIsDemo(false)
       setSession(result.data.session)
     }
@@ -98,7 +104,7 @@ export function AuthProvider({ children }) {
   async function signOut() {
     const result = isDemo ? { error: null } : await endSession()
     if (!result.error) {
-      demoStore.clear()
+      clearDemonstration()
       setSession(null)
       setIsDemo(false)
     }
@@ -106,6 +112,7 @@ export function AuthProvider({ children }) {
   }
 
   function startDemo() {
+    clinicalPreviewStore.clear()
     demoStore.start()
     setIsDemo(true)
     setSession(demoSession())

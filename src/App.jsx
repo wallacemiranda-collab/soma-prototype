@@ -22,6 +22,11 @@ import DoctorShell from './components/DoctorShell'
 import DoctorDashboard from './screens/DoctorDashboard'
 import DoctorPatient from './screens/DoctorPatient'
 import HomologationBoundary from './components/HomologationBoundary'
+import Phase3PreviewBoundary from './components/Phase3PreviewBoundary'
+import { Phase3PwaProvider } from './contexts/Phase3PwaContext'
+import { phase3Preview } from './config/phase3Preview'
+import InstallPreview from './screens/InstallPreview'
+import ReminderPreview from './screens/ReminderPreview'
 import { homologationEnabled } from './config/homologation'
 import {
   ClinicalDoctorPreview,
@@ -35,8 +40,8 @@ import {
 
 export default function App() {
   useEffect(() => {
-    document.title = `${homologationEnabled ? '[Prévia] ' : ''}${brand.siteTitle}`
-    if (!homologationEnabled) return
+    document.title = `${phase3Preview.requested ? '[Prévia Fase 3] ' : homologationEnabled ? '[Prévia] ' : ''}${brand.siteTitle}`
+    if (!homologationEnabled && !phase3Preview.requested) return
     const robots = document.createElement('meta')
     robots.name = 'robots'
     robots.content = 'noindex, nofollow, noarchive'
@@ -45,56 +50,69 @@ export default function App() {
   }, [])
 
   return (
-    <HomologationBoundary>
-      <AuthProvider>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/splash" element={<Splash />} />
-          <Route path="/planos" element={<Pricing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/redefinir-senha" element={<ResetPassword />} />
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MobileShell />}>
-              <Route path="/home" element={<Home />} />
-              <Route path="/evolucao" element={<Evolution />} />
-              <Route path="/habitos" element={<Habits />} />
-              <Route path="/educacao" element={<Education />} />
-              <Route path="/perfil" element={<Profile />} />
-              <Route path="/registro" element={<PatientEntry />} />
-              <Route path="/compartilhar" element={<Sharing />} />
-              <Route path="/modulos" element={<ClinicalHub />} />
-              <Route
-                path="/modulos/:moduleId"
-                element={<ClinicalModuleScreen />}
-              />
-              <Route
-                path="/previa/medico"
-                element={<ClinicalDoctorPreview />}
-              />
-              <Route path="/cuidados" element={<ClinicalPatientWorkspace />} />
-            </Route>
-            <Route element={<DoctorShell />}>
-              <Route
-                path="/profissional/pacientes/:patientId/cuidados"
-                element={<ClinicalDoctorWorkspace />}
-              />
-              <Route path="/profissional" element={<DoctorDashboard />} />
-              <Route
-                path="/profissional/pacientes/:patientId"
-                element={<DoctorPatient />}
-              />
-              <Route path="/medico" element={<DoctorDashboard />} />
-              <Route
-                path="/medico/pacientes/:patientId"
-                element={<DoctorPatient />}
-              />
-            </Route>
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
-    </HomologationBoundary>
+    <Phase3PreviewBoundary>
+      <Phase3PwaProvider>
+        <HomologationBoundary>
+          <AuthProvider>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/splash" element={<Splash />} />
+              <Route path="/planos" element={<Pricing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/redefinir-senha" element={<ResetPassword />} />
+              {phase3Preview.allowed && (
+                <Route path="/instalar" element={<InstallPreview />} />
+              )}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MobileShell />}>
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/evolucao" element={<Evolution />} />
+                  <Route path="/habitos" element={<Habits />} />
+                  <Route path="/educacao" element={<Education />} />
+                  <Route path="/perfil" element={<Profile />} />
+                  <Route path="/registro" element={<PatientEntry />} />
+                  <Route path="/compartilhar" element={<Sharing />} />
+                  {phase3Preview.allowed && (
+                    <Route path="/lembretes" element={<ReminderPreview />} />
+                  )}
+                  <Route path="/modulos" element={<ClinicalHub />} />
+                  <Route
+                    path="/modulos/:moduleId"
+                    element={<ClinicalModuleScreen />}
+                  />
+                  <Route
+                    path="/previa/medico"
+                    element={<ClinicalDoctorPreview />}
+                  />
+                  <Route
+                    path="/cuidados"
+                    element={<ClinicalPatientWorkspace />}
+                  />
+                </Route>
+                <Route element={<DoctorShell />}>
+                  <Route
+                    path="/profissional/pacientes/:patientId/cuidados"
+                    element={<ClinicalDoctorWorkspace />}
+                  />
+                  <Route path="/profissional" element={<DoctorDashboard />} />
+                  <Route
+                    path="/profissional/pacientes/:patientId"
+                    element={<DoctorPatient />}
+                  />
+                  <Route path="/medico" element={<DoctorDashboard />} />
+                  <Route
+                    path="/medico/pacientes/:patientId"
+                    element={<DoctorPatient />}
+                  />
+                </Route>
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AuthProvider>
+        </HomologationBoundary>
+      </Phase3PwaProvider>
+    </Phase3PreviewBoundary>
   )
 }

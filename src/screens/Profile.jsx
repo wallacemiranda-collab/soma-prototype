@@ -11,6 +11,7 @@ import { initials } from '../lib/patientData'
 import { heightBounds } from '../lib/anthropometry'
 import ClinicalPreviewLink from '../components/ClinicalPreviewLink'
 import ClinicalAccessLink from '../components/ClinicalAccessLink'
+import Phase3PreviewLink from '../components/Phase3PreviewLink'
 
 export default function Profile() {
   const { user, isDemo, signOut } = useAuth()
@@ -72,6 +73,7 @@ export default function Profile() {
       <AppHeader title="Meu perfil" simple />
       <ClinicalPreviewLink />
       <ClinicalAccessLink />
+      <Phase3PreviewLink />
       <Link
         to="/compartilhar"
         className="mb-5 block rounded-2xl bg-soma-100 p-4 font-semibold text-soma-800"

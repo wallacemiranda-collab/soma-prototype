@@ -1,5 +1,10 @@
 # Prévia protegida para revisão no celular
 
+Revisão encerrada em 22/11/2026: o responsável aprovou o comportamento e autorizou
+a publicação oficial. As contas fictícias foram limpas e o link temporário não
+abre mais a prévia sem autenticação. Este é um registro histórico; veja
+[PHASE2_RELEASE.md](PHASE2_RELEASE.md) para a entrega oficial.
+
 Preparada em 21/11/2026, sem publicar a Fase 2 no site oficial.
 
 ## Publicação

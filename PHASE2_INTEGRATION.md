@@ -1,4 +1,8 @@
-# Fase 2: integração preparada, não publicada
+# Fase 2: registro da integração
+
+Atualização em 22/11/2026: integração publicada após revisão e autorização
+separada do responsável. As informações abaixo registram a preparação anterior;
+estado oficial em [PHASE2_RELEASE.md](PHASE2_RELEASE.md).
 
 Em 21/11/2026, o responsável confirmou a revisão clínica dos campos/limites,
 doses/intervalos e a conferência em iPhone/Safari e Android/Chrome. Autorizou

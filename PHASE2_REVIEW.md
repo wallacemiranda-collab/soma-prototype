@@ -1,5 +1,8 @@
 # Fase 2: prévia clínica
 
+Registro da prévia inicial. A revisão e a publicação oficial foram concluídas
+em 22/11/2026, conforme [PHASE2_RELEASE.md](PHASE2_RELEASE.md).
+
 Esta entrega é uma simulação para revisão, não uma fase liberada para pacientes.
 Não foi aplicada nenhuma migração, alterada nenhuma configuração de produção ou
 conectado um novo formulário ao Supabase. A versão oficial permanece na Fase 1.

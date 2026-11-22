@@ -1,5 +1,9 @@
 # Fase 2: correções com histórico preservado
 
+Atualização em 22/11/2026: o fluxo foi aprovado pelo responsável e publicado no
+oficial. Este documento registra sua implementação e revisão anteriores;
+entrega e conferência final em [PHASE2_RELEASE.md](PHASE2_RELEASE.md).
+
 Implementação e conferência em 21/11/2026, somente na homologação `ctcsolobseerqnddahun`.
 Não houve publicação na Vercel nem mudança no banco oficial. Nenhum serviço pago contratado.
 

@@ -1,5 +1,9 @@
 # Endo +: homologação da Fase 2
 
+Atualização em 22/11/2026: a revisão foi concluída e a Fase 2 foi publicada com
+autorização. O texto abaixo registra a etapa anterior. Estado final em
+[PHASE2_RELEASE.md](PHASE2_RELEASE.md).
+
 Registro de 21/11/2026. Esta etapa não é uma publicação oficial nem uma liberação comercial.
 
 ## Ambiente separado

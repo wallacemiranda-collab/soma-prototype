@@ -178,6 +178,34 @@ test('a physician sees authorized history and persists a new plan without editin
   ).toHaveCount(0)
 })
 
+test('patient consent saves homologation reminders and revocation clears the schedule without push', async ({
+  page,
+}) => {
+  await login(page, patient)
+  await page.goto('/lembretes')
+  await expect(page.getByText('Homologação: sem notificações enviadas')).toBeVisible()
+  await page.getByLabel('Ativar minha agenda salva').check()
+  await page.getByLabel('Lembrete de rotina com medicamento').check()
+  await page.getByText(/Autorizo salvar estes horários na minha conta fictícia/).click()
+  const permissionBefore = await page.evaluate(() => Notification.permission)
+  await page.getByRole('button', { name: 'Salvar preferências' }).click()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Preferências salvas na sua conta fictícia' }),
+  ).toBeVisible()
+  expect(await page.evaluate(() => Notification.permission)).toBe(permissionBefore)
+
+  await page.reload()
+  await expect(page.getByLabel('Ativar minha agenda salva')).toBeChecked()
+  await expect(page.getByLabel('Lembrete de rotina com medicamento')).toBeChecked()
+  await page.getByRole('button', { name: 'Revogar e apagar meus horários' }).click()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Autorização revogada' }),
+  ).toBeVisible()
+  await expect(page.getByLabel('Ativar minha agenda salva')).not.toBeChecked()
+  await expect(page.getByLabel('Lembrete de rotina com medicamento')).not.toBeChecked()
+  expect(await page.evaluate(() => Notification.permission)).toBe(permissionBefore)
+})
+
 test('a different patient cannot open another patient clinical workspace', async ({
   page,
 }) => {

@@ -65,6 +65,7 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
   assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'false')
   assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'false')
   assert.equal(built.env.VITE_GOOGLE_AUTH_ENABLED, 'false')
+  assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
   assert.equal(built.env.VITE_PHASE3_PREVIEW_ENABLED, 'true')
   assert.equal(source.VITE_SUPABASE_URL, 'https://production.example.invalid')
 
@@ -75,6 +76,7 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
   })
   assert.equal(production.isPhase3Preview, false)
   assert.equal(production.env.VITE_PHASE3_PREVIEW_ENABLED, 'false')
+  assert.equal(production.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
   assert.equal(production.env.VITE_SUPABASE_URL, source.VITE_SUPABASE_URL)
   assert.equal(production.env.VITE_SUPABASE_ANON_KEY, source.VITE_SUPABASE_ANON_KEY)
   const otherPreview = getBuildEnvironment({
@@ -83,10 +85,44 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
   })
   assert.equal(otherPreview.isPhase3Preview, false)
   assert.equal(otherPreview.env.VITE_PHASE3_PREVIEW_ENABLED, 'false')
+  assert.equal(otherPreview.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
   assert.throws(
     () => getBuildEnvironment({ VERCEL: '1', VERCEL_ENV: 'preview' }),
     /branch metadata/,
   )
+})
+
+test('reminder homologation builds require a branch-scoped staging publishable key', () => {
+  const source = {
+    VERCEL: '1',
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_REF: 'codex/lembretes-homologacao',
+    VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_staging_key',
+  }
+  const built = getBuildEnvironment(source)
+  assert.equal(built.isReminderHomologationPreview, true)
+  assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_PHASE3_PREVIEW_ENABLED, 'false')
+  assert.equal(built.env.VITE_GOOGLE_AUTH_ENABLED, 'false')
+
+  for (const patch of [
+    { VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co' },
+    { VITE_SUPABASE_URL: 'https://unrelated.supabase.co' },
+    { VITE_SUPABASE_ANON_KEY: 'sb_secret_not_for_browsers' },
+    { VITE_SUPABASE_SERVICE_ROLE_KEY: 'must-not-be-exposed' },
+  ])
+    assert.throws(
+      () => getBuildEnvironment({ ...source, ...patch }),
+      /staging URL and a publishable staging key/,
+    )
+
+  const normalPreview = getBuildEnvironment({
+    ...source,
+    VERCEL_GIT_COMMIT_REF: 'codex/another-feature',
+  })
+  assert.equal(normalPreview.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
 })
 test('worker handles only same-origin navigations, stores nothing and cannot send push', async () => {
   const source = readFileSync(

@@ -58,7 +58,7 @@ export function collectPreviewFiles(root, key) {
   const files = collectSourceFiles(root)
   const settings = files.find((file) => file.file === 'vercel.json')
   const config = JSON.parse(settings.data)
-  config.buildCommand = `env VITE_PHASE3_PREVIEW_ENABLED=false VITE_SUPABASE_URL=https://${stagingProject}.supabase.co VITE_SUPABASE_ANON_KEY=${key} VITE_HOMOLOGATION_ENABLED=true VITE_CLINICAL_INTEGRATION_ENABLED=true VITE_CLINICAL_PREVIEW_ENABLED=false VITE_GOOGLE_AUTH_ENABLED=false node node_modules/vite/bin/vite.js build`
+  config.buildCommand = `env VITE_PHASE3_PREVIEW_ENABLED=false VITE_SUPABASE_URL=https://${stagingProject}.supabase.co VITE_SUPABASE_ANON_KEY=${key} VITE_HOMOLOGATION_ENABLED=true VITE_REMINDERS_HOMOLOGATION_ENABLED=true VITE_CLINICAL_INTEGRATION_ENABLED=true VITE_CLINICAL_PREVIEW_ENABLED=false VITE_GOOGLE_AUTH_ENABLED=false node node_modules/vite/bin/vite.js build`
   config.installCommand = 'pnpm install --frozen-lockfile'
   config.outputDirectory = 'dist'
   config.framework = 'vite'

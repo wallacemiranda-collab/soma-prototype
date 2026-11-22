@@ -4,6 +4,8 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const phase3Branch = 'codex/fase3-previa'
+const reminderHomologationBranch = 'codex/lembretes-homologacao'
+const reminderHomologationProject = 'ctcsolobseerqnddahun'
 const phase3Environment = {
   VITE_PHASE3_PREVIEW_ENABLED: 'true',
   VITE_SUPABASE_URL: '',
@@ -11,6 +13,15 @@ const phase3Environment = {
   VITE_HOMOLOGATION_ENABLED: 'false',
   VITE_CLINICAL_PREVIEW_ENABLED: 'false',
   VITE_CLINICAL_INTEGRATION_ENABLED: 'false',
+  VITE_GOOGLE_AUTH_ENABLED: 'false',
+  VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
+}
+const reminderHomologationEnvironment = {
+  VITE_PHASE3_PREVIEW_ENABLED: 'false',
+  VITE_HOMOLOGATION_ENABLED: 'true',
+  VITE_REMINDERS_HOMOLOGATION_ENABLED: 'true',
+  VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
+  VITE_CLINICAL_PREVIEW_ENABLED: 'false',
   VITE_GOOGLE_AUTH_ENABLED: 'false',
 }
 
@@ -25,12 +36,35 @@ export function getBuildEnvironment(environment = process.env) {
 
   const isPhase3Preview =
     isVercelPreview && env.VERCEL_GIT_COMMIT_REF === phase3Branch
+  const isReminderHomologationPreview =
+    isVercelPreview &&
+    env.VERCEL_GIT_COMMIT_REF === reminderHomologationBranch
 
   if (isPhase3Preview) Object.assign(env, phase3Environment)
-  else if (isVercelPreview || isVercelProduction)
+  else if (isReminderHomologationPreview) {
+    const forbiddenClientKeys = Object.keys(env).filter(
+      (key) =>
+        key.startsWith('VITE_') &&
+        /(SERVICE_ROLE|SECRET|PRIVATE|PASSWORD)/i.test(key) &&
+        env[key],
+    )
+    if (
+      env.VITE_SUPABASE_URL !==
+        `https://${reminderHomologationProject}.supabase.co` ||
+      !env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_') ||
+      forbiddenClientKeys.length
+    )
+      throw new Error(
+        'Reminder homologation builds require only the staging URL and a publishable staging key.',
+      )
+    Object.assign(env, reminderHomologationEnvironment)
+  }
+  else if (isVercelPreview || isVercelProduction) {
     env.VITE_PHASE3_PREVIEW_ENABLED = 'false'
+    env.VITE_REMINDERS_HOMOLOGATION_ENABLED = 'false'
+  }
 
-  return { env, isPhase3Preview }
+  return { env, isPhase3Preview, isReminderHomologationPreview }
 }
 
 export function build() {

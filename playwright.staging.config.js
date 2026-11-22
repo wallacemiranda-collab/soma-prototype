@@ -31,6 +31,7 @@ export default defineConfig({
       VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
       VITE_GOOGLE_AUTH_ENABLED: 'false',
       VITE_HOMOLOGATION_ENABLED: 'true',
+      VITE_REMINDERS_HOMOLOGATION_ENABLED: 'true',
     },
   },
 })

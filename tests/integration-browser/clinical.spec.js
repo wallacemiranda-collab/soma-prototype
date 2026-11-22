@@ -38,6 +38,7 @@ async function clinicalBackend(page, ui, options = {}) {
         },
       ]
   const records = []
+  const corrections = []
   let failWrite = options.failWrite
   let revoked = false
   ui.accounts.get(doctor).doctorProfile = {
@@ -78,10 +79,16 @@ async function clinicalBackend(page, ui, options = {}) {
           : reply({ modules: [module], permissions })
       if (name === 'endo_save_clinical_record') {
         if (failWrite) {
+          const conflict = failWrite === 'PT409'
           failWrite = false
           return reply(
-            { code: 'NETWORK_FAILURE', message: 'Falha de conexão simulada' },
-            500,
+            {
+              code: conflict ? 'PT409' : 'NETWORK_FAILURE',
+              message: conflict
+                ? 'Clinical plan changed; reload first'
+                : 'Falha de conexão simulada',
+            },
+            conflict ? 409 : 500,
           )
         }
         const existing = records.find(
@@ -97,6 +104,51 @@ async function clinicalBackend(page, ui, options = {}) {
         }
         records.push(row)
         return reply(row)
+      }
+      if (name === 'endo_correct_clinical_record') {
+        if (options.failCorrection) {
+          options.failCorrection = false
+          return reply(
+            { code: 'NETWORK_FAILURE', message: 'Falha de conexão simulada' },
+            500,
+          )
+        }
+        const existing = corrections.find(
+          (row) => row.request_id === values.p_request_id,
+        )
+        if (existing) return reply(existing)
+        if (
+          corrections.some(
+            (row) => row.previous_record_id === values.p_record_id,
+          )
+        )
+          return reply(
+            { code: 'PT409', message: 'Record already corrected' },
+            409,
+          )
+        const before = records.find((row) => row.id === values.p_record_id)
+        const replacement = values.p_values
+          ? {
+              ...before,
+              ...values.p_values,
+              id: randomUUID(),
+              request_id: values.p_request_id,
+            }
+          : null
+        if (replacement) records.push(replacement)
+        const audit = {
+          id: randomUUID(),
+          patient_id: patient,
+          actor_id: patient,
+          kind: values.p_kind,
+          previous_record_id: before.id,
+          replacement_record_id: replacement?.id ?? null,
+          reason: values.p_reason,
+          request_id: values.p_request_id,
+          created_at: new Date().toISOString(),
+        }
+        corrections.push(audit)
+        return reply(audit)
       }
       if (name === 'endo_grant_clinical_activation') {
         permissions.push({
@@ -145,17 +197,20 @@ async function clinicalBackend(page, ui, options = {}) {
         'thyroid_intakes',
         'blood_pressure_readings',
         'clinical_module_versions',
+        'clinical_record_corrections',
       ].includes(name)
     ) {
       return reply(
-        name === 'clinical_module_versions'
-          ? [
-              version,
-              ...(module.version.id === version.id ? [] : [module.version]),
-            ]
-          : name === 'glucose_readings'
-            ? records
-            : [],
+        name === 'clinical_record_corrections'
+          ? corrections
+          : name === 'clinical_module_versions'
+            ? [
+                version,
+                ...(module.version.id === version.id ? [] : [module.version]),
+              ]
+            : name === 'glucose_readings'
+              ? records
+              : [],
       )
     }
     return route.fallback()
@@ -165,6 +220,7 @@ async function clinicalBackend(page, ui, options = {}) {
     doctor,
     calls,
     records,
+    corrections,
     module,
     revoke() {
       revoked = true
@@ -225,6 +281,107 @@ test('patient integration saves an authenticated record, retries with the same i
   await expect(
     page.getByRole('region', { name: 'Evolução clínica da conta' }),
   ).toContainText('120')
+})
+
+test('corrections retain drafts after failure, persist an audit trail and remove voided records from summaries', async ({
+  page,
+  ui,
+}) => {
+  const api = await clinicalBackend(page, ui, { failCorrection: true })
+  await ui.login()
+  await page.goto('/cuidados')
+  await page.getByLabel('Glicemia (mg/dL)', { exact: true }).fill('110')
+  await page
+    .getByRole('button', { name: 'Salvar glicemia capilar', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: 'Corrigir registro', exact: true })
+    .click()
+  const editor = page.getByRole('form', { name: 'Corrigir registro clínico' })
+  await editor.getByLabel('Glicemia (mg/dL)', { exact: true }).fill('125')
+  await editor.getByLabel('Motivo da correção').fill('Digitei o valor errado')
+  await editor
+    .getByRole('button', { name: 'Salvar correção', exact: true })
+    .click()
+  await expect(editor.getByRole('alert')).toContainText(
+    'Falha de conexão simulada',
+  )
+  await expect(
+    editor.getByLabel('Glicemia (mg/dL)', { exact: true }),
+  ).toHaveValue('125')
+  await expect(editor.getByLabel('Motivo da correção')).toHaveValue(
+    'Digitei o valor errado',
+  )
+  await editor
+    .getByRole('button', { name: 'Salvar correção', exact: true })
+    .click()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Correção salva.' }),
+  ).toBeVisible()
+  await page.reload()
+  const history = page.getByRole('region', { name: 'Histórico clínico' })
+  await expect(history.locator('article')).toHaveCount(1)
+  await expect(history).toContainText('125')
+  await history
+    .getByText('Ver original e alterações (1)', { exact: true })
+    .click()
+  await expect(history).toContainText('110')
+  await expect(history).toContainText('Digitei o valor errado')
+  const attempts = api.calls.filter(
+    (call) => call.name === 'endo_correct_clinical_record',
+  )
+  expect(attempts).toHaveLength(2)
+  expect(attempts[0].values.p_request_id).toBe(attempts[1].values.p_request_id)
+  expect(api.corrections).toHaveLength(1)
+  await page
+    .getByRole('button', { name: 'Desconsiderar registro', exact: true })
+    .click()
+  const voidForm = page.getByRole('form', {
+    name: 'Desconsiderar registro clínico',
+  })
+  await voidForm
+    .getByLabel('Motivo para desconsiderar')
+    .fill('Registro duplicado por engano')
+  await expect(
+    voidForm.getByRole('button', { name: 'Confirmar registro desconsiderado' }),
+  ).toBeDisabled()
+  await voidForm.getByRole('checkbox').check()
+  await voidForm
+    .getByRole('button', { name: 'Confirmar registro desconsiderado' })
+    .click()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Registro desconsiderado.' }),
+  ).toBeVisible()
+  await page.reload()
+  await expect(history).toContainText('Desconsiderado · não entra nos resumos')
+  await expect(
+    history.getByRole('button', { name: 'Corrigir registro', exact: true }),
+  ).toHaveCount(0)
+  expect(api.records).toHaveLength(2)
+  expect(api.corrections).toHaveLength(2)
+})
+
+test('a stale plan asks for a reload without retrying or discarding the patient input', async ({
+  page,
+  ui,
+}) => {
+  const api = await clinicalBackend(page, ui, { failWrite: 'PT409' })
+  await ui.login()
+  await page.goto('/cuidados')
+  await page.getByLabel('Glicemia (mg/dL)', { exact: true }).fill('120')
+  await page
+    .getByRole('button', { name: 'Salvar glicemia capilar', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText(
+    'O acompanhamento mudou. Atualize a página',
+  )
+  await expect(
+    page.getByLabel('Glicemia (mg/dL)', { exact: true }),
+  ).toHaveValue('120')
+  expect(
+    api.calls.filter((call) => call.name === 'endo_save_clinical_record'),
+  ).toHaveLength(1)
+  expect(api.records).toHaveLength(0)
 })
 
 test('clinical activation consent is explicit and revocation removes forms without erasing history', async ({

@@ -19,6 +19,7 @@ const tables = [
   'gi_symptom_logs',
   'thyroid_intakes',
   'blood_pressure_readings',
+  'clinical_record_corrections',
 ]
 const at = new Date(Date.now() - 86400000).toISOString()
 const date = at.slice(0, 10)
@@ -48,6 +49,7 @@ test(
         'doctor-code-customization.sql',
         'health-professionals.sql',
         'phase2-clinical.sql',
+        'phase2-corrections.sql',
       ]) {
         try {
           await db.exec(
@@ -62,6 +64,46 @@ test(
       const version = (await db.query('select version() as version')).rows[0]
         .version
       t.diagnostic(version)
+      await t.test(
+        'conflict repair is idempotent and preserves function privileges',
+        async () => {
+          const selector = `select p.oid, p.proname, p.proacl::text, p.prosecdef, p.proconfig
+          from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+          where n.nspname='endo_private' and p.proname in ('clinical_grant','clinical_configure','clinical_close','clinical_lock_module','clinical_save') order by p.proname`
+          const before = (await db.query(selector)).rows
+          assert.equal(before.length, 5)
+          // Reproduce the prior installation, then exercise its in-place repair twice.
+          for (const row of before) {
+            const definition = (
+              await db.query(
+                'select pg_get_functiondef($1::oid) as definition',
+                [row.oid],
+              )
+            ).rows[0].definition
+            assert.ok(definition.includes("errcode = 'PT409'"))
+            await db.exec(
+              definition.replaceAll("errcode = 'PT409'", "errcode = '40001'"),
+            )
+          }
+          const repair = await readFile(
+            new URL('supabase/phase2-conflict-response.sql', root),
+            'utf8',
+          )
+          await db.exec(repair)
+          await db.exec(repair)
+          assert.deepEqual((await db.query(selector)).rows, before)
+          for (const row of before) {
+            const definition = (
+              await db.query(
+                'select pg_get_functiondef($1::oid) as definition',
+                [row.oid],
+              )
+            ).rows[0].definition
+            assert.ok(definition.includes("errcode = 'PT409'"))
+            assert.ok(!definition.includes("errcode = '40001'"))
+          }
+        },
+      )
       async function as(id, action, role = 'authenticated') {
         await db.exec('savepoint actor_scope')
         try {
@@ -91,6 +133,7 @@ test(
             'endo_configure_clinical_module',
             'endo_close_clinical_module',
             'endo_save_clinical_record',
+            'endo_correct_clinical_record',
           ].includes(name)
         ) {
           const actor = (await sql('select auth.uid() as actor'))[0].actor
@@ -165,6 +208,24 @@ test(
             ]),
           )
         }
+        async function correct(
+          kind,
+          record,
+          values,
+          reason = 'Erro de digitação',
+          request = randomUUID(),
+          actor = patient,
+        ) {
+          return as(actor, () =>
+            rpc('endo_correct_clinical_record', [
+              kind,
+              record,
+              request,
+              reason,
+              values,
+            ]),
+          )
+        }
         return {
           patient,
           stranger,
@@ -175,6 +236,7 @@ test(
           grant,
           configure,
           save,
+          correct,
         }
       }
       async function scenario(title, body) {
@@ -574,19 +636,19 @@ test(
           assert.equal(Number(row.dose_mg), 1)
           await denied(
             () => f.save('injection', timed({ site: 'arm' }), first.id),
-            '40001',
+            'PT409',
           )
-          await denied(() => f.configure('glp1', plan, first.id), '40001')
+          await denied(() => f.configure('glp1', plan, first.id), 'PT409')
           await denied(
             () => f.configure('glp1', plan, null, f.doctor, request),
-            '40001',
+            'PT409',
           )
           const id = randomUUID()
           await f.save('injection', timed({ site: 'arm' }), second.id, id)
           await denied(
             () =>
               f.save('injection', timed({ site: 'abdomen' }), second.id, id),
-            '40001',
+            'PT409',
           )
         },
       )
@@ -681,6 +743,307 @@ test(
               )
             ).modules.find((m) => m.module_key === 'glp1').current_version_id,
             g.id,
+          )
+        },
+      )
+      await scenario(
+        'all seven correction types append typed records and retain the original author, values and version',
+        async (f) => {
+          await f.share()
+          await f.grant()
+          const versions = {}
+          versions.diabetes = await f.configure()
+          versions.glp1 = await f.configure('glp1', {
+            medication: 'Semaglutida',
+            dose_mg: 1,
+            interval_days: 7,
+            anchor_date: '2020-01-01',
+          })
+          versions.thyroid = await f.configure('thyroid', {})
+          versions.pressure = await f.configure('pressure', {})
+          const cases = [
+            [
+              'glucose',
+              'glucose_readings',
+              'diabetes',
+              timed({ value: 110, context: 'fasting' }),
+              { value: 120 },
+            ],
+            [
+              'hypoglycemia',
+              'hypoglycemia_events',
+              'diabetes',
+              timed({
+                value: null,
+                symptoms: 'Sintoma fictício',
+                action_taken: 'Ação fictícia',
+              }),
+              { value: 65 },
+            ],
+            [
+              'hba1c',
+              'hba1c_results',
+              'diabetes',
+              { occurred_on: date, time_zone: 'UTC', value: 6.8 },
+              { value: 6.9 },
+            ],
+            [
+              'injection',
+              'injection_logs',
+              'glp1',
+              timed({ site: 'arm' }),
+              { site: 'thigh' },
+            ],
+            [
+              'gi',
+              'gi_symptom_logs',
+              'glp1',
+              timed({
+                nausea: 0,
+                vomiting: 0,
+                constipation: 0,
+                diarrhea: 0,
+                reflux: 0,
+              }),
+              { nausea: 1 },
+            ],
+            [
+              'thyroid',
+              'thyroid_intakes',
+              'thyroid',
+              timed({ fasting: 'yes' }),
+              { fasting: 'no' },
+            ],
+            [
+              'pressure',
+              'blood_pressure_readings',
+              'pressure',
+              timed({ systolic: 120, diastolic: 80, pulse: null }),
+              { systolic: 125 },
+            ],
+          ]
+          for (const [kind, table, module, values, patch] of cases) {
+            const original = await f.save(kind, values, versions[module].id)
+            const request = randomUUID()
+            const corrected = await f.correct(
+              kind,
+              original.id,
+              { ...values, ...patch },
+              'Erro de digitação',
+              request,
+            )
+            assert.equal(corrected.actor_id, f.patient)
+            assert.equal(corrected.previous_record_id, original.id)
+            assert.ok(corrected.created_at)
+            assert.equal(
+              (
+                await f.correct(
+                  kind,
+                  original.id,
+                  { ...values, ...patch },
+                  'Erro de digitação',
+                  request,
+                )
+              ).id,
+              corrected.id,
+            )
+            const rows = await as(f.patient, () =>
+              sql(`select * from public.${table}`),
+            )
+            assert.equal(rows.length, 2)
+            const before = rows.find((row) => row.id === original.id),
+              after = rows.find(
+                (row) => row.id === corrected.replacement_record_id,
+              )
+            assert.equal(after.module_version_id, before.module_version_id)
+            for (const [key, value] of Object.entries(patch))
+              assert.equal(String(after[key]), String(value))
+            await denied(
+              () => f.correct(kind, original.id, { ...values, ...patch }),
+              'PT409',
+            )
+            await denied(
+              () =>
+                f.correct(
+                  kind,
+                  original.id,
+                  { ...values, ...patch },
+                  'Motivo diferente',
+                  request,
+                ),
+              'PT409',
+            )
+          }
+          assert.equal(
+            (
+              await as(f.patient, () =>
+                sql('select * from public.clinical_record_corrections'),
+              )
+            ).length,
+            7,
+          )
+        },
+      )
+      await scenario(
+        'a closed historical plan permits patient corrections but never replaces its dose or revives recording',
+        async (f) => {
+          await f.share()
+          await f.grant()
+          const old = await f.configure('glp1', {
+            medication: 'Semaglutida',
+            dose_mg: 1,
+            interval_days: 7,
+            anchor_date: '2020-01-01',
+          })
+          const original = await f.save(
+            'injection',
+            timed({ site: 'arm' }),
+            old.id,
+          )
+          await f.configure(
+            'glp1',
+            {
+              medication: 'Semaglutida',
+              dose_mg: 2,
+              interval_days: 7,
+              anchor_date: '2020-01-01',
+            },
+            old.id,
+          )
+          await as(f.patient, () =>
+            rpc('endo_revoke_clinical_activation', [f.doctor]),
+          )
+          const first = await f.correct(
+            'injection',
+            original.id,
+            timed({ site: 'thigh' }),
+          )
+          const voided = await f.correct(
+            'injection',
+            first.replacement_record_id,
+            null,
+            'Aplicação anotada por engano',
+          )
+          assert.equal(voided.replacement_record_id, null)
+          await denied(
+            () =>
+              f.correct(
+                'injection',
+                first.replacement_record_id,
+                timed({ site: 'arm' }),
+              ),
+            'PT409',
+          )
+          const [snapshot] = await sql(
+            'select v.dose_mg from public.injection_logs i join public.clinical_module_versions v on v.id=i.module_version_id where i.id=$1',
+            [first.replacement_record_id],
+          )
+          assert.equal(Number(snapshot.dose_mg), 1)
+          await denied(() =>
+            f.save('injection', timed({ site: 'arm' }), old.id),
+          )
+          await db.query('delete from auth.users where id=$1', [f.patient])
+          assert.equal(
+            (await sql('select * from public.clinical_record_corrections'))
+              .length,
+            0,
+          )
+        },
+      )
+      await scenario(
+        'only the patient can correct; unauthorized readers cannot see or alter audit rows',
+        async (f) => {
+          await f.share()
+          await f.grant()
+          const v = await f.configure(),
+            original = await f.save(
+              'glucose',
+              timed({ value: 110, context: 'fasting' }),
+              v.id,
+            )
+          for (const actor of [f.doctor, f.nutritionist, f.stranger])
+            await denied(() =>
+              f.correct(
+                'glucose',
+                original.id,
+                timed({ value: 120, context: 'fasting' }),
+                'Erro de digitação',
+                randomUUID(),
+                actor,
+              ),
+            )
+          await f.correct(
+            'glucose',
+            original.id,
+            timed({ value: 120, context: 'fasting' }),
+          )
+          assert.equal(
+            (
+              await as(f.doctor, () =>
+                sql('select * from public.clinical_record_corrections'),
+              )
+            ).length,
+            1,
+          )
+          assert.equal(
+            (
+              await as(f.stranger, () =>
+                sql('select * from public.clinical_record_corrections'),
+              )
+            ).length,
+            0,
+          )
+          for (const operation of [
+            "update public.clinical_record_corrections set reason='Changed'",
+            'delete from public.clinical_record_corrections',
+          ])
+            await denied(() => as(f.patient, () => sql(operation)))
+          await as(f.patient, () =>
+            rpc('endo_revoke_doctor_access', [f.doctor]),
+          )
+          assert.equal(
+            (
+              await as(f.doctor, () =>
+                sql('select * from public.clinical_record_corrections'),
+              )
+            ).length,
+            0,
+          )
+        },
+      )
+      await scenario(
+        'invalid corrections roll back atomically and cannot inject actor, dose or future dates',
+        async (f) => {
+          await f.share()
+          await f.grant()
+          const v = await f.configure(),
+            values = timed({ value: 110, context: 'fasting' }),
+            original = await f.save('glucose', values, v.id)
+          for (const [payload, reason] of [
+            [values, '   '],
+            [values, 'Motivo válido'],
+            [{ ...values, value: 0 }, 'Motivo válido'],
+            [
+              { ...values, value: 120, module_version_id: randomUUID() },
+              'Motivo válido',
+            ],
+            [
+              { ...values, value: 120, occurred_at: '2099-01-01T10:00:00Z' },
+              'Motivo válido',
+            ],
+          ])
+            await denied(
+              () => f.correct('glucose', original.id, payload, reason),
+              null,
+            )
+          assert.equal(
+            (await sql('select * from public.glucose_readings')).length,
+            1,
+          )
+          assert.equal(
+            (await sql('select * from public.clinical_record_corrections'))
+              .length,
+            0,
           )
         },
       )

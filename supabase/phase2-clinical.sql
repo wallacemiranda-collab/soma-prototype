@@ -248,7 +248,7 @@ begin
   select * into existing from public.patient_module_permissions where patient_id = auth.uid() and request_id = p_request;
   if found then
     if existing.doctor_id is distinct from p_doctor or existing.share_granted_at is distinct from a.granted_at or existing.revoked_at is not null then
-      raise exception 'Consent request is no longer current' using errcode = '40001';
+      raise exception 'Consent request is no longer current' using errcode = 'PT409';
     end if;
     return existing.id;
   end if;
@@ -295,10 +295,10 @@ begin
     if s.permission_id is distinct from p.id or s.current_version_id is distinct from retry.id
       or retry.doctor_id is distinct from auth.uid() or not s.enabled
       or row(retry.glucose_low,retry.glucose_high,retry.medication,retry.dose_mg,retry.interval_days,retry.anchor_date)
-         is distinct from row(low,high,drug,dose,days,anchor) then raise exception 'Stale or reused configuration request' using errcode = '40001'; end if;
+         is distinct from row(low,high,drug,dose,days,anchor) then raise exception 'Stale or reused configuration request' using errcode = 'PT409'; end if;
     return to_jsonb(retry);
   end if;
-  if s.current_version_id is distinct from p_expected then raise exception 'Configuration changed; reload first' using errcode = '40001'; end if;
+  if s.current_version_id is distinct from p_expected then raise exception 'Configuration changed; reload first' using errcode = 'PT409'; end if;
   select coalesce(max(x.revision),0) + 1 into revision from public.clinical_module_versions x where x.setting_id = s.id;
   insert into public.clinical_module_versions (setting_id,patient_id,module_key,doctor_id,revision,request_id,glucose_low,glucose_high,medication,dose_mg,interval_days,anchor_date)
     values (s.id,p_patient,p_module,auth.uid(),revision,p_request,low,high,drug,dose,days,anchor) returning * into v;
@@ -312,7 +312,7 @@ begin
   if auth.uid() is null then raise insufficient_privilege; end if;
   select * into s from public.clinical_module_settings where patient_id = auth.uid() and module_key = p_module for update;
   if not found then raise exception 'Module not found' using errcode = '22023'; end if;
-  if s.current_version_id is distinct from p_expected then raise exception 'Configuration changed; reload first' using errcode = '40001'; end if;
+  if s.current_version_id is distinct from p_expected then raise exception 'Configuration changed; reload first' using errcode = 'PT409'; end if;
   update public.clinical_module_settings set enabled = false where id = s.id;
 end $$;
 
@@ -328,7 +328,7 @@ begin
   perform 1 from public.patient_module_permissions where id = s.permission_id for share;
   select * into current_s from public.clinical_module_settings where id = s.id for share;
   if row(current_s.doctor_id,current_s.permission_id,current_s.current_version_id) is distinct from row(s.doctor_id,s.permission_id,s.current_version_id)
-    then raise exception 'Module changed; reload first' using errcode = '40001'; end if;
+    then raise exception 'Module changed; reload first' using errcode = 'PT409'; end if;
   if not endo_private.clinical_active(s.id) then raise insufficient_privilege using message = 'Module inactive'; end if;
   return current_s;
 end $$;
@@ -376,17 +376,17 @@ begin
     if coalesce(p_values->>key,'') !~ '^[0-3]$' then raise exception 'Invalid symptom intensity' using errcode = '22023'; end if;
   end loop; end if;
   s := endo_private.clinical_lock_module(m);
-  if s.current_version_id is distinct from p_version then raise exception 'Clinical plan changed; reload first' using errcode = '40001'; end if;
+  if s.current_version_id is distinct from p_version then raise exception 'Clinical plan changed; reload first' using errcode = 'PT409'; end if;
   select * into v from public.clinical_module_versions where id = p_version;
   if p_kind = 'injection' and (occurred at time zone zone)::date < v.anchor_date then raise exception 'Application predates this plan' using errcode = '22023'; end if;
   execute format('select to_jsonb(r) from public.%I r where patient_id = $1 and request_id = $2', t) into previous using auth.uid(), p_request;
   if previous is not null then
-    if (previous->>'module_version_id')::uuid is distinct from p_version then raise exception 'Reused request identity' using errcode = '40001'; end if;
+    if (previous->>'module_version_id')::uuid is distinct from p_version then raise exception 'Reused request identity' using errcode = 'PT409'; end if;
     foreach key in array allowed loop
       if key = 'occurred_at' then
-        if (previous->>key)::timestamptz is distinct from occurred then raise exception 'Reused request identity' using errcode = '40001'; end if;
+        if (previous->>key)::timestamptz is distinct from occurred then raise exception 'Reused request identity' using errcode = 'PT409'; end if;
       elsif (previous->key) is distinct from (p_values->key) and not ((previous->key) = 'null'::jsonb and not p_values ? key) then
-        raise exception 'Reused request identity' using errcode = '40001';
+        raise exception 'Reused request identity' using errcode = 'PT409';
       end if;
     end loop;
     return previous;

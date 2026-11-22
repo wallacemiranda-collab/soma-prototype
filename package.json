@@ -13,6 +13,8 @@
     "test:clinical": "playwright test --config playwright.clinical.config.js",
     "test:database": "node --test tests/database/*.test.js",
     "test:integration": "playwright test --config playwright.integration.config.js",
+    "test:staging:api": "node --test tests/staging/api.test.mjs",
+    "test:staging:browser": "playwright test --config playwright.staging.config.js",
     "test:public": "node --test tests/public/site.test.js"
   },
   "dependencies": {

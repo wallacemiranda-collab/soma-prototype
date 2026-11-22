@@ -1,4 +1,8 @@
 import { isGoogleAuthEnabled, supabase } from '../lib/supabaseClient.js'
+import {
+  homologationEnabled,
+  isSyntheticLogin,
+} from '../config/homologation.js'
 
 function unavailable() {
   return {
@@ -9,11 +13,12 @@ function unavailable() {
 
 export async function signInWithEmail(email, password) {
   if (!supabase) return unavailable()
+  if (homologationEnabled && !isSyntheticLogin(email)) return unavailable()
   return supabase.auth.signInWithPassword({ email: email.trim(), password })
 }
 
 export async function signUpWithEmail(email, password, fullName) {
-  if (!supabase) return unavailable()
+  if (!supabase || homologationEnabled) return unavailable()
   return supabase.auth.signUp({
     email: email.trim(),
     password,
@@ -38,14 +43,14 @@ export async function signOut() {
 }
 
 export async function requestPasswordReset(email) {
-  if (!supabase) return unavailable()
+  if (!supabase || homologationEnabled) return unavailable()
   return supabase.auth.resetPasswordForEmail(email.trim(), {
     redirectTo: `${window.location.origin}/redefinir-senha`,
   })
 }
 
 export async function updatePassword(password) {
-  if (!supabase) return unavailable()
+  if (!supabase || homologationEnabled) return unavailable()
   return supabase.auth.updateUser({ password })
 }
 

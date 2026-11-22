@@ -227,6 +227,56 @@ test('record writes preserve units and instant/time zone and strip any supplied 
   assert.equal('plan_snapshot' in call.args.p_values, false)
   assert.equal(values.value, '110')
 })
+test('corrections bind the verified actor and preserve the original instant and zone without accepting a new plan', async () => {
+  const f = fixture()
+  const instant = '2026-01-10T10:00:37.123Z'
+  const original = {
+    id: request,
+    occurred_at: instant,
+    time_zone: 'America/Sao_Paulo',
+  }
+  const local = new Date(instant)
+  const time = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}-${String(local.getDate()).padStart(2, '0')}T${String(local.getHours()).padStart(2, '0')}:${String(local.getMinutes()).padStart(2, '0')}`
+  await f.repository.correctRecord({
+    kind: 'glucose',
+    record_id: request,
+    request_id: version,
+    reason: '  Erro de digitação ',
+    original,
+    values: {
+      occurred_at: time,
+      value: 120,
+      context: 'fasting',
+      patient_id: doctor,
+      module_version_id: doctor,
+    },
+  })
+  const call = f.calls[0]
+  assert.equal(call.rpc, 'endo_correct_clinical_record')
+  assert.equal(call.args.p_actor_id, patient)
+  assert.equal(call.args.p_reason, 'Erro de digitação')
+  assert.equal(call.args.p_values.occurred_at, instant)
+  assert.equal(call.args.p_values.time_zone, original.time_zone)
+  assert.equal(call.args.p_values.module_version_id, undefined)
+  await assert.rejects(
+    f.repository.voidRecord({
+      kind: 'glucose',
+      record_id: request,
+      request_id: version,
+      reason: 'Erro de registro',
+      confirmed: false,
+    }),
+  )
+  await f.repository.voidRecord({
+    kind: 'glucose',
+    record_id: request,
+    request_id: version,
+    reason: 'Erro de registro',
+    confirmed: true,
+  })
+  assert.equal(f.calls[1].args.p_values, null)
+})
+
 test('invalid identifiers, kinds and values cannot issue writes; backend errors stay failures', async () => {
   const f = fixture()
   await assert.rejects(f.repository.loadPatient('demo-user'))

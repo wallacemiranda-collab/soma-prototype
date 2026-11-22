@@ -1,3 +1,5 @@
+import { homologationProject } from '../config/homologation.js'
+
 export function readBackendConfig(env = {}) {
   const url =
     typeof env.VITE_SUPABASE_URL === 'string'
@@ -31,6 +33,13 @@ export function readBackendConfig(env = {}) {
   return {
     url,
     key,
-    configured: Boolean(validUrl && publicKey && !url.includes('seu-projeto')),
+    configured: Boolean(
+      validUrl &&
+        publicKey &&
+        !url.includes('seu-projeto') &&
+        (env.VITE_HOMOLOGATION_ENABLED !== 'true' ||
+          (url === `https://${homologationProject}.supabase.co` &&
+            key.startsWith('sb_publishable_'))),
+    ),
   }
 }

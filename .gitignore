@@ -7,5 +7,6 @@ dist
 !.env.example
 .pnpm-store
 test-results
+test-results-staging
 test-results-public
 playwright-report

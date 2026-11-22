@@ -1,8 +1,14 @@
 import {
   clinicalModules,
+  clinicalRecordTypes,
+  localDateTime,
   validateClinicalRecord,
   validateModuleConfig,
 } from '../lib/clinicalModules.js'
+import {
+  correctionReason,
+  resolveClinicalHistory,
+} from '../lib/clinicalCorrections.js'
 
 const recordTables = {
   glucose: 'glucose_readings',
@@ -30,7 +36,7 @@ function moduleKey(value) {
   return value
 }
 
-// Not connected to the UI yet. A real client alone never enables Phase 2.
+// Disabled by default. A real client alone never enables Phase 2.
 export function createClinicalRepository(
   client,
   { enabled = false, now = () => new Date() } = {},
@@ -129,6 +135,17 @@ export function createClinicalRepository(
         ).map((row) => ({ ...row, kind })),
       ),
     ])
+    // Read the ledger after the records; a concurrent correction must never double-count an original.
+    const corrections = await history(
+      'clinical_record_corrections',
+      patientId,
+      'created_at',
+    )
+    const resolved = resolveClinicalHistory(
+      recordGroups.flat(),
+      corrections,
+      patientId,
+    )
     // Recheck both the authenticated identity and patient authorization after pagination.
     if ((await currentUser()).id !== user.id)
       throw new Error('A conta mudou. Recarregue para continuar.')
@@ -143,7 +160,35 @@ export function createClinicalRepository(
       throw new Error('Não foi possível reconfirmar a autorização.')
     if ((await currentUser()).id !== user.id)
       throw new Error('A conta mudou. Recarregue para continuar.')
-    return { ...fresh, versions, records: recordGroups.flat() }
+    return { ...fresh, versions, corrections, ...resolved }
+  }
+  function recordValues(kind, values, original) {
+    const normalized = validateClinicalRecord(kind, values, now())
+    const { kind: _, ...payload } = normalized
+    payload.time_zone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (payload.occurred_at) {
+      payload.occurred_at = new Date(payload.occurred_at).toISOString()
+      // Editing a value alone preserves the original instant (including seconds) and time zone.
+      if (
+        original?.occurred_at &&
+        localDateTime(new Date(original.occurred_at)) === values.occurred_at
+      ) {
+        payload.occurred_at = new Date(original.occurred_at).toISOString()
+        payload.time_zone = original.time_zone
+      }
+    } else if (original?.time_zone) payload.time_zone = original.time_zone
+    return payload
+  }
+  function correction({ kind, record_id, request_id, reason }, values) {
+    if (!Object.hasOwn(clinicalRecordTypes, kind))
+      throw new Error('Tipo de registro inválido.')
+    return rpc('endo_correct_clinical_record', {
+      p_kind: kind,
+      p_record_id: uuid(record_id),
+      p_request_id: uuid(request_id),
+      p_reason: correctionReason(reason),
+      p_values: values,
+    })
   }
   return {
     async loadMine() {
@@ -189,17 +234,28 @@ export function createClinicalRepository(
       })
     },
     async saveRecord({ kind, values, module_version_id, request_id }) {
-      const normalized = validateClinicalRecord(kind, values, now())
-      const { kind: _, ...payload } = normalized
-      payload.time_zone = Intl.DateTimeFormat().resolvedOptions().timeZone
-      if (payload.occurred_at)
-        payload.occurred_at = new Date(payload.occurred_at).toISOString()
+      const payload = recordValues(kind, values)
       return rpc('endo_save_clinical_record', {
         p_kind: kind,
         p_module_version: uuid(module_version_id),
         p_request_id: uuid(request_id),
         p_values: payload,
       })
+    },
+    async correctRecord(args) {
+      return correction(
+        args,
+        recordValues(
+          args.kind,
+          args.values,
+          args.original?.id === args.record_id ? args.original : null,
+        ),
+      )
+    },
+    async voidRecord(args) {
+      if (args.confirmed !== true)
+        throw new Error('Confirme que deseja desconsiderar este registro.')
+      return correction(args, null)
     },
   }
 }

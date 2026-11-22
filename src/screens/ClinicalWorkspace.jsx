@@ -13,6 +13,7 @@ import {
 } from '../components/ClinicalRecords'
 import { ApplicationOverview, GlucoseOverview } from './ClinicalPreview'
 import MetabolicCard from '../components/MetabolicCard'
+import ClinicalCorrectionEditor from '../components/ClinicalCorrectionEditor'
 import {
   Feedback,
   FormField,
@@ -34,8 +35,8 @@ const configOf = (version) =>
           anchor_date: version.anchor_date,
         }
       : {}
-function historyOf(data) {
-  return data.records.map((row) => {
+function historyOf(data, rows = data.records) {
+  const decorate = (row) => {
     if (row.kind !== 'injection') return row
     const v = data.versions.find(
       (version) => version.id === row.module_version_id,
@@ -45,7 +46,15 @@ function historyOf(data) {
       plan_revision: v?.revision,
       plan_snapshot: v ? configOf(v) : null,
     }
-  })
+  }
+  return rows.map((row) => ({
+    ...decorate(row),
+    audit: row.audit?.map((change) => ({
+      ...change,
+      before: decorate(change.before),
+      after: change.after ? decorate(change.after) : null,
+    })),
+  }))
 }
 function useWorkspace(patientId) {
   const { user } = useAuth()
@@ -194,6 +203,8 @@ function PatientContent() {
   const { data, providers, reload } = workspace
   const [selected, setSelected] = useState('glucose')
   const [error, setError] = useState('')
+  const [editor, setEditor] = useState(null)
+  const [reviewMessage, setReviewMessage] = useState('')
   const [pending, setPending] = useState(false)
   const busy = useRef(false)
   const requests = useRef(new Map())
@@ -207,7 +218,7 @@ function PatientContent() {
       await reload()
     } catch (failure) {
       setError(
-        failure.code === '40001'
+        failure.code === 'PT409'
           ? 'A autorização mudou. Atualize a página antes de tentar novamente.'
           : 'Não foi possível alterar a autorização. Confira a conexão e tente novamente.',
       )
@@ -311,7 +322,42 @@ function PatientContent() {
                 })}
               <Feedback error={error} />
             </section>
-            {!!active.length && (
+            <Feedback message={reviewMessage} />
+            {editor && (
+              <ClinicalCorrectionEditor
+                key={`${editor.row.id}-${editor.mode}`}
+                record={editor.row}
+                mode={editor.mode}
+                onCancel={() => setEditor(null)}
+                onSave={async (recordKind, values, requestId, reason) => {
+                  const args = {
+                    kind: recordKind,
+                    record_id: editor.row.id,
+                    request_id: requestId,
+                    reason,
+                  }
+                  if (editor.mode === 'correct')
+                    await clinicalRepository.correctRecord({
+                      ...args,
+                      values,
+                      original: editor.row,
+                    })
+                  else
+                    await clinicalRepository.voidRecord({
+                      ...args,
+                      confirmed: true,
+                    })
+                  setEditor(null)
+                  setReviewMessage(
+                    editor.mode === 'correct'
+                      ? 'Correção salva. O original continua no histórico.'
+                      : 'Registro desconsiderado. O original continua no histórico.',
+                  )
+                  await reload()
+                }}
+              />
+            )}
+            {!!active.length && !editor && (
               <MetabolicCard className="my-5">
                 <SelectField
                   label="O que deseja registrar no acompanhamento?"
@@ -379,7 +425,25 @@ function PatientContent() {
                 )}
               </MetabolicCard>
             ))}
-            <ClinicalSummary data={data} />
+            <ClinicalSummary
+              data={data}
+              onCorrect={
+                !editor
+                  ? (row) => {
+                      setReviewMessage('')
+                      setEditor({ row, mode: 'correct' })
+                    }
+                  : undefined
+              }
+              onVoid={
+                !editor
+                  ? (row) => {
+                      setReviewMessage('')
+                      setEditor({ row, mode: 'void' })
+                    }
+                  : undefined
+              }
+            />
           </>
         )}
       </State>
@@ -424,7 +488,7 @@ function ActivationConsent({ provider, allowed, pending, onChange }) {
     </MetabolicCard>
   )
 }
-function ClinicalSummary({ data }) {
+function ClinicalSummary({ data, onCorrect, onVoid }) {
   const records = historyOf(data)
   const diabetes = data.modules.find(
     (module) => module.module_key === 'diabetes',
@@ -454,7 +518,12 @@ function ClinicalSummary({ data }) {
           demo={false}
         />
       )}
-      <ClinicalHistory records={records} demo={false} />
+      <ClinicalHistory
+        records={historyOf(data, data.historyRecords || data.records)}
+        demo={false}
+        onCorrect={onCorrect}
+        onVoid={onVoid}
+      />
     </section>
   )
 }
@@ -565,7 +634,7 @@ function ModuleConfiguration({ module, setting, allowed, patientId, onSaved }) {
             await onSaved()
           } catch (failure) {
             setError(
-              failure.code === '40001'
+              failure.code === 'PT409'
                 ? 'A configuração mudou. Atualize a página antes de continuar.'
                 : 'Não foi possível configurar. Confira a autorização do paciente e os campos; seus valores foram preservados.',
             )

@@ -1,14 +1,14 @@
-# Desenho do banco da Fase 2, ainda não aplicado
+# Banco da Fase 2, somente em homologação
 
-Este documento descreve a integração futura. A prévia atual não cria tabelas,
-não usa RPCs clínicas e não grava no Supabase. Não executar o esquema inicial
-do projeto para implantar esta fase. Criar migração incremental somente após
-aprovar os campos e as regras, e testá-la primeiro fora da produção.
+Os scripts incrementais foram aplicados e testados no projeto separado de homologação.
+A demonstração anterior continua sem gravação no serviço. Não executar o esquema
+inicial do projeto para implantar esta fase em bancos existentes.
 
 A implementação incremental foi preparada em `supabase/phase2-clinical.sql`,
-sem aplicação ao projeto remoto. A revisão clínica e dos aparelhos foi confirmada
-pelo responsável em 21/11/2026. Os testes locais usam PostgreSQL embarcado e
-contas sintéticas; não equivalem à homologação do Supabase Auth/Data API.
+aplicado somente na homologação. A revisão clínica e dos aparelhos da prévia foi
+confirmada pelo responsável em 21/11/2026; as novas telas integradas e de correção
+ainda precisam de revisão. Há testes locais e com Auth/Data API reais, sem dados
+de pacientes. Consulte `../PHASE2_HOMOLOGATION.md` e `../PHASE2_CORRECTIONS.md`.
 
 ## Estrutura proposta
 
@@ -24,11 +24,12 @@ contas sintéticas; não equivalem à homologação do Supabase Auth/Data API.
 | `gi_symptom_logs` | paciente, instante, cinco intensidades inteiras de 0 a 3 |
 | `thyroid_intakes` | paciente, instante e jejum explicitamente sim/não/não informado |
 | `blood_pressure_readings` | paciente, instante, sistólica, diastólica e pulso opcional |
+| `clinical_record_corrections` | paciente/ator, tipo, original e substituto (ou desconsideração), motivo, tentativa e instante do servidor; somente leitura autorizada e gravação por RPC |
 
 Cada registro tem UUID, chave de idempotência por paciente/tipo para repetição de
 envio, data de criação e referência à versão imutável do módulo. Nesta integração
-inicial, registros inseridos são imutáveis pela API: a correção auditável ainda
-precisa de implementação antes de ampliar o piloto. Configurações usam comparação
+os originais são imutáveis pela API: `phase2-corrections.sql` cria outra versão
+tipada e sua auditoria, sem sobrescrever nem apagar o original. Configurações usam comparação
 da versão esperada para impedir sobrescrita concorrente.
 Índices por `(patient_id, occurred_at desc, id)` ou data do exame servirão à
 paginação do histórico. Configurações usarão unicidade paciente/módulo;

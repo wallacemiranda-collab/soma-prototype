@@ -9,6 +9,7 @@ import {
   isSupabaseConfigured,
 } from '../lib/supabaseClient'
 import { requestPasswordReset } from '../services/authService'
+import { homologationEnabled } from '../config/homologation'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -25,13 +26,14 @@ export default function Login() {
     setAccessMode,
   } = useAuth()
   const [mode, setMode] = useState(() =>
+    !homologationEnabled &&
     new URLSearchParams(location.search).get('modo') === 'cadastro'
       ? 'signup'
       : 'signin',
   )
   const requested = location.state?.from?.pathname
   const requestedDoctor =
-    /^\/(?:medico|profissional)(?:\/pacientes\/[a-f0-9-]+)?$/.test(
+    /^\/(?:medico|profissional)(?:\/pacientes\/[a-f0-9-]+(?:\/cuidados)?)?$/.test(
       requested ?? '',
     )
   const selection = new URLSearchParams(location.search).get('acesso')
@@ -56,6 +58,7 @@ export default function Login() {
     '/perfil',
     '/registro',
     '/compartilhar',
+    '/cuidados',
   ].includes(requested)
     ? requested
     : requestedDoctor
@@ -141,6 +144,13 @@ export default function Login() {
             ? 'Informe o e-mail da sua conta para receber um link de recuperação.'
             : 'Entre para registrar sua rotina e acompanhar sua evolução.'}
         </p>
+        {homologationEnabled && (
+          <p className="mt-4 rounded-xl bg-soma-100 p-4 text-sm text-soma-800">
+            Use somente os acessos fictícios fornecidos para esta revisão.
+            Cadastro, recuperação de senha e Google estão desativados nesta
+            prévia.
+          </p>
+        )}
         {!isSupabaseConfigured && (
           <p
             role="status"
@@ -248,7 +258,7 @@ export default function Login() {
                   : 'Entrar'}
           </PrimaryButton>
         </form>
-        {mode === 'signin' && (
+        {mode === 'signin' && !homologationEnabled && (
           <button
             onClick={() => changeMode('forgot')}
             className="mt-4 w-full py-2 text-center text-sm font-semibold text-soma-600"
@@ -267,16 +277,20 @@ export default function Login() {
             Continuar com Google
           </button>
         )}
-        <p className="mt-7 text-center text-sm text-soma-600">
-          {mode === 'signin' ? 'Ainda não tem conta? ' : 'Já tem conta? '}
-          <button
-            disabled={pending}
-            onClick={() => changeMode(mode === 'signin' ? 'signup' : 'signin')}
-            className="py-2 font-semibold text-soma-800"
-          >
-            {mode === 'signin' ? 'Criar conta' : 'Entrar'}
-          </button>
-        </p>
+        {!homologationEnabled && (
+          <p className="mt-7 text-center text-sm text-soma-600">
+            {mode === 'signin' ? 'Ainda não tem conta? ' : 'Já tem conta? '}
+            <button
+              disabled={pending}
+              onClick={() =>
+                changeMode(mode === 'signin' ? 'signup' : 'signin')
+              }
+              className="py-2 font-semibold text-soma-800"
+            >
+              {mode === 'signin' ? 'Criar conta' : 'Entrar'}
+            </button>
+          </p>
+        )}
         <div className="mt-7 border-t border-soma-100 pt-6 text-center">
           <button
             disabled={pending || isLoading}

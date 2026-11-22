@@ -70,6 +70,13 @@ devem indicar que não há cálculo. Esse roteiro também serve para futuras rev
 
 ## Desenvolvimento
 
+A prévia isolada da Fase 2 está descrita em [PHASE2_REVIEW.md](PHASE2_REVIEW.md).
+Ela exige ativação explícita, funciona somente na demonstração e não modifica
+o banco nem os acessos da versão oficial.
+
+A preparação da conexão a contas está em [PHASE2_INTEGRATION.md](PHASE2_INTEGRATION.md).
+Ela permanece desabilitada por padrão e não foi aplicada ao Supabase remoto.
+
 Use Node.js 22 ou 24 e pnpm.
 
 ```bash

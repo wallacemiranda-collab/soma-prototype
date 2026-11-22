@@ -5,6 +5,8 @@ import AppHeader from '../components/AppHeader'
 import AIInsightCard from '../components/AIInsightCard'
 import HabitItem from '../components/HabitItem'
 import MetabolicCard from '../components/MetabolicCard'
+import ClinicalPreviewLink from '../components/ClinicalPreviewLink'
+import ClinicalAccessLink from '../components/ClinicalAccessLink'
 import { Feedback, SectionTitle } from '../components/ui'
 import { usePatient } from '../contexts/PatientContext'
 import {
@@ -38,6 +40,8 @@ export default function Home() {
   return (
     <>
       <AppHeader subtitle="Seu cuidado, um dia de cada vez" />
+      <ClinicalPreviewLink />
+      <ClinicalAccessLink />
       <MetabolicCard emphasis>
         <p className="text-sm text-soma-100">Seu diário de saúde</p>
         <h2 className="mt-3 text-2xl font-semibold">Como foi seu dia?</h2>

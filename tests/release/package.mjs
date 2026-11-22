@@ -25,7 +25,7 @@ export function collectReleaseFiles(root, { url, key, googleEnabled = false }) {
     !config.rewrites?.some((row) => row.destination === '/')
   )
     throw new Error('Release guard: preserve redirects and SPA routing.')
-  config.buildCommand = `env VITE_SUPABASE_URL=${url} VITE_SUPABASE_ANON_KEY=${key} VITE_HOMOLOGATION_ENABLED=false VITE_CLINICAL_INTEGRATION_ENABLED=true VITE_CLINICAL_PREVIEW_ENABLED=false VITE_GOOGLE_AUTH_ENABLED=${googleEnabled} node node_modules/vite/bin/vite.js build`
+  config.buildCommand = `env VITE_PHASE3_PREVIEW_ENABLED=false VITE_SUPABASE_URL=${url} VITE_SUPABASE_ANON_KEY=${key} VITE_HOMOLOGATION_ENABLED=false VITE_CLINICAL_INTEGRATION_ENABLED=true VITE_CLINICAL_PREVIEW_ENABLED=false VITE_GOOGLE_AUTH_ENABLED=${googleEnabled} node node_modules/vite/bin/vite.js build`
   config.installCommand = 'pnpm install --frozen-lockfile'
   config.outputDirectory = 'dist'
   config.framework = 'vite'

@@ -1,5 +1,26 @@
 import { test, expect } from './fixture'
 
+test('phase 3 is absent by default and does not register a worker or manifest for real accounts', async ({
+  page,
+  ui,
+}) => {
+  const workers = []
+  page.on('request', (request) => {
+    if (request.url().includes('/phase3-sw.js')) workers.push(request.url())
+  })
+  await ui.login()
+  await expect(
+    page.getByRole('link', { name: /Experimentar lembretes/ }),
+  ).toHaveCount(0)
+  await expect(page.locator('link[rel="manifest"]')).toHaveCount(0)
+  expect(
+    await page.evaluate(() =>
+      navigator.serviceWorker.getRegistrations().then((rows) => rows.length),
+    ),
+  ).toBe(0)
+  expect(workers).toEqual([])
+})
+
 test('patient login returns to the clinical workspace requested by a direct link', async ({
   page,
   ui,

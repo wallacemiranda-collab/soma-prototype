@@ -10,6 +10,7 @@ import {
 } from '../lib/supabaseClient'
 import { requestPasswordReset } from '../services/authService'
 import { homologationEnabled } from '../config/homologation'
+import { phase3Preview } from '../config/phase3Preview'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -59,6 +60,7 @@ export default function Login() {
     '/registro',
     '/compartilhar',
     '/cuidados',
+    ...(phase3Preview.allowed ? ['/lembretes'] : []),
   ].includes(requested)
     ? requested
     : requestedDoctor

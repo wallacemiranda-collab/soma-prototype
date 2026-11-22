@@ -14,6 +14,7 @@ export function collectSourceFiles(root) {
     'tailwind.config.js',
     'postcss.config.js',
     'vercel.json',
+    'scripts/build.js',
   ]
   function visit(path) {
     const info = lstatSync(resolve(root, path))
@@ -25,7 +26,9 @@ export function collectSourceFiles(root) {
     else if (
       info.isFile() &&
       !path.split('/').some((part) => part.startsWith('.')) &&
-      /\.(js|jsx|css|svg)$/.test(path)
+      (/\.(js|jsx|css|svg)$/.test(path) ||
+        path === 'public/manifest.webmanifest' ||
+        /^public\/icons\/endo-preview-(180|192|512)\.png$/.test(path))
     )
       paths.push(path)
     else throw new Error(`Unexpected preview source: ${path}`)
@@ -38,10 +41,13 @@ export function collectSourceFiles(root) {
       lstatSync(resolve(root, file)).isSymbolicLink()
     )
       throw new Error('Invalid source file.')
+    const encoding = file.endsWith('.png') ? 'base64' : 'utf-8'
     return {
       file,
-      data: readFileSync(resolve(root, file), 'utf8'),
-      encoding: 'utf-8',
+      data: readFileSync(resolve(root, file)).toString(
+        encoding === 'base64' ? 'base64' : 'utf8',
+      ),
+      encoding,
     }
   })
 }
@@ -52,7 +58,7 @@ export function collectPreviewFiles(root, key) {
   const files = collectSourceFiles(root)
   const settings = files.find((file) => file.file === 'vercel.json')
   const config = JSON.parse(settings.data)
-  config.buildCommand = `env VITE_SUPABASE_URL=https://${stagingProject}.supabase.co VITE_SUPABASE_ANON_KEY=${key} VITE_HOMOLOGATION_ENABLED=true VITE_CLINICAL_INTEGRATION_ENABLED=true VITE_CLINICAL_PREVIEW_ENABLED=false VITE_GOOGLE_AUTH_ENABLED=false node node_modules/vite/bin/vite.js build`
+  config.buildCommand = `env VITE_PHASE3_PREVIEW_ENABLED=false VITE_SUPABASE_URL=https://${stagingProject}.supabase.co VITE_SUPABASE_ANON_KEY=${key} VITE_HOMOLOGATION_ENABLED=true VITE_CLINICAL_INTEGRATION_ENABLED=true VITE_CLINICAL_PREVIEW_ENABLED=false VITE_GOOGLE_AUTH_ENABLED=false node node_modules/vite/bin/vite.js build`
   config.installCommand = 'pnpm install --frozen-lockfile'
   config.outputDirectory = 'dist'
   config.framework = 'vite'

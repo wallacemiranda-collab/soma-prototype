@@ -31,6 +31,7 @@ export default defineConfig({
       VITE_SUPABASE_URL: testBackend,
       VITE_SUPABASE_ANON_KEY: 'sb_publishable_synthetic_browser_tests',
       VITE_GOOGLE_AUTH_ENABLED: 'false',
+      VITE_PHASE3_PREVIEW_ENABLED: 'false',
     },
   },
 })

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { demoSession, demoStore } from '../lib/demoStore'
 import { clinicalPreviewStore } from '../lib/clinicalPreviewStore'
+import { reminderPreviewStore } from '../lib/reminderPreview'
 import {
   getCurrentSession,
   onAuthStateChange,
@@ -15,6 +16,7 @@ const AuthContext = createContext(null)
 function clearDemonstration() {
   demoStore.clear()
   clinicalPreviewStore.clear()
+  reminderPreviewStore.clear()
 }
 
 export function AuthProvider({ children }) {
@@ -113,6 +115,7 @@ export function AuthProvider({ children }) {
 
   function startDemo() {
     clinicalPreviewStore.clear()
+    reminderPreviewStore.clear()
     demoStore.start()
     setIsDemo(true)
     setSession(demoSession())

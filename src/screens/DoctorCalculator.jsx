@@ -228,7 +228,7 @@ export default function DoctorCalculator() {
 
       <Card>
         <p className="text-sm leading-6 text-soma-700">
-          Índice não invasivo para estratificação inicial de fibrose hepática. Informe a idade na data do exame e os valores laboratoriais correspondentes.
+          Ferramenta de triagem inicial para estratificação do risco de fibrose na MASLD. Informe a idade na data do exame e os valores laboratoriais correspondentes.
         </p>
         <p className="mt-3 rounded-xl bg-soma-50 p-3 text-sm text-soma-800">
           Não usar durante doença aguda. A interpretação tem menor precisão abaixo de 35 anos. A classificação é uma triagem, não um diagnóstico.
@@ -306,7 +306,7 @@ export default function DoctorCalculator() {
           <p className="mt-2 text-4xl font-semibold text-soma-950">{scoreLabel(preview.score)}</p>
           <p className="mt-2 font-medium text-soma-800">{fib4Interpretation(preview)}</p>
           <p className="mt-3 text-sm text-soma-700">
-            Faixas usadas: abaixo de {scoreLabel(preview.low_cutoff)}, intermediária até 2,67 e acima de 2,67. Abaixo de 35 anos, a faixa não é classificada.
+            Faixas de triagem para MASLD: abaixo de {scoreLabel(preview.low_cutoff)}, intermediária até 2,67 e acima de 2,67. A partir de 65 anos, o primeiro corte é 2,00. Abaixo de 35 anos, a faixa não é classificada.
           </p>
           <p className="mt-3 text-xs leading-5 text-soma-600">
             Este resultado é uma triagem e não substitui avaliação médica. Converse com seu médico.

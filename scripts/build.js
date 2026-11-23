@@ -4,6 +4,12 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const phase3Branch = 'codex/fase3-previa'
+const calculatorPreviewBranches = new Set([
+  'codex/fase8-privacidade',
+  'codex/publicar-calculadoras',
+])
+const calculatorPreviewProject = 'ctcsolobseerqnddahun'
+const calculatorProductionProject = 'trlwhngxqfgksiponpzk'
 const phase3Environment = {
   VITE_PHASE3_PREVIEW_ENABLED: 'true',
   VITE_SUPABASE_URL: '',
@@ -12,6 +18,36 @@ const phase3Environment = {
   VITE_CLINICAL_PREVIEW_ENABLED: 'false',
   VITE_CLINICAL_INTEGRATION_ENABLED: 'false',
   VITE_GOOGLE_AUTH_ENABLED: 'false',
+}
+const calculatorPreviewEnvironment = {
+  VITE_CALCULATORS_ENABLED: 'true',
+  VITE_HOMOLOGATION_ENABLED: 'true',
+  VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
+  VITE_CLINICAL_PREVIEW_ENABLED: 'false',
+  VITE_PHASE3_PREVIEW_ENABLED: 'false',
+  VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
+  VITE_GOOGLE_AUTH_ENABLED: 'false',
+}
+
+function hasPublicSupabaseKey(value) {
+  if (value?.startsWith('sb_publishable_')) return true
+  const payload = value?.split('.')[1]
+  if (!payload) return false
+  try {
+    const decoded = Buffer.from(payload, 'base64url').toString('utf8')
+    return JSON.parse(decoded).role === 'anon'
+  } catch {
+    return false
+  }
+}
+
+function hasForbiddenClientKey(environment) {
+  return Object.keys(environment).some(
+    (key) =>
+      key.startsWith('VITE_') &&
+      /(SERVICE_ROLE|SECRET|PRIVATE|PASSWORD)/i.test(key) &&
+      environment[key],
+  )
 }
 
 export function getBuildEnvironment(environment = process.env) {
@@ -25,12 +61,50 @@ export function getBuildEnvironment(environment = process.env) {
 
   const isPhase3Preview =
     isVercelPreview && env.VERCEL_GIT_COMMIT_REF === phase3Branch
+  const isCalculatorPreview =
+    isVercelPreview && calculatorPreviewBranches.has(env.VERCEL_GIT_COMMIT_REF)
+  const isCalculatorProduction = isVercelProduction
 
   if (isPhase3Preview) Object.assign(env, phase3Environment)
-  else if (isVercelPreview || isVercelProduction)
+  else if (isCalculatorPreview) {
+    if (
+      env.VITE_SUPABASE_URL !== `https://${calculatorPreviewProject}.supabase.co` ||
+      !env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_') ||
+      hasForbiddenClientKey(env)
+    )
+      throw new Error(
+        'Calculator preview builds require only the homologation URL and a public staging key.',
+      )
+    Object.assign(env, calculatorPreviewEnvironment)
+  } else if (isCalculatorProduction) {
+    if (
+      env.VITE_SUPABASE_URL !== `https://${calculatorProductionProject}.supabase.co` ||
+      !hasPublicSupabaseKey(env.VITE_SUPABASE_ANON_KEY) ||
+      hasForbiddenClientKey(env)
+    )
+      throw new Error(
+        'Production calculator builds require the production URL and only a public Supabase key.',
+      )
+    Object.assign(env, {
+      VITE_CALCULATORS_ENABLED: 'true',
+      VITE_HOMOLOGATION_ENABLED: 'false',
+      VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
+      VITE_CLINICAL_PREVIEW_ENABLED: 'false',
+      VITE_PHASE3_PREVIEW_ENABLED: 'false',
+      VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
+    })
+  } else if (isVercelPreview) {
     env.VITE_PHASE3_PREVIEW_ENABLED = 'false'
+    env.VITE_REMINDERS_HOMOLOGATION_ENABLED = 'false'
+    env.VITE_CALCULATORS_ENABLED = 'false'
+  }
 
-  return { env, isPhase3Preview }
+  return {
+    env,
+    isPhase3Preview,
+    isCalculatorPreview,
+    isCalculatorProduction,
+  }
 }
 
 export function build() {

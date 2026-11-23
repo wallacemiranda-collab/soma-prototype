@@ -14,6 +14,7 @@ test('access request IDs are UUIDs and use the platform UUID generator when avai
 
 test('access scope labels are ready for the patient-facing history', () => {
   assert.deepEqual(accessScopeLabels, {
+    calculators: 'calculadoras',
     clinical: 'dados clínicos',
     habits: 'hábitos',
     measurements: 'medidas e evolução',

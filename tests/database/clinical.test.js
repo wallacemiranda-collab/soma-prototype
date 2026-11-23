@@ -1235,6 +1235,30 @@ test(
         )
         assert.match(results.at(-1).rows[0].result, /passed$/)
       })
+      await t.test('FIB-4 history is private until per-result sharing', async () => {
+        const calculatorMigration = await readFile(
+          new URL('supabase/20261123160123_phase7_fib4_results.sql', root),
+          'utf8',
+        )
+        await db.exec('begin;\n' + calculatorMigration + '\ncommit;')
+        await db.exec('begin;\n' + calculatorMigration + '\ncommit;')
+        const calculatorIndexMigration = await readFile(
+          new URL(
+            'supabase/20261123160410_phase7_calculator_results_created_by_index.sql',
+            root,
+          ),
+          'utf8',
+        )
+        await db.exec('begin;\n' + calculatorIndexMigration + '\ncommit;')
+        await db.exec('begin;\n' + calculatorIndexMigration + '\ncommit;')
+        const results = await db.exec(
+          await readFile(
+            new URL('supabase/verify-phase7-fib4-results.sql', root),
+            'utf8',
+          ),
+        )
+        assert.match(results.at(-1).rows[0].result, /passed$/)
+      })
     } finally {
       await db.close()
     }

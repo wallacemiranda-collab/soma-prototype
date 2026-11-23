@@ -88,6 +88,79 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
     /branch metadata/,
   )
 })
+test('FIB-4 preview is limited to the homologation branch and backend', () => {
+  const source = {
+    VERCEL: '1',
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_REF: 'codex/fase8-privacidade',
+    VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_staging_key',
+  }
+  const built = getBuildEnvironment(source)
+  assert.equal(built.isCalculatorPreview, true)
+  assert.equal(built.env.VITE_CALCULATORS_ENABLED, 'true')
+  assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
+
+  for (const patch of [
+    { VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co' },
+    { VITE_SUPABASE_URL: 'https://unrelated.supabase.co' },
+    { VITE_SUPABASE_ANON_KEY: 'sb_secret_not_for_browsers' },
+    { VITE_SUPABASE_SECRET_KEY: 'must-not-be-exposed' },
+  ])
+    assert.throws(
+      () => getBuildEnvironment({ ...source, ...patch }),
+      /homologation URL and a public staging key/,
+    )
+
+  const regularPreview = getBuildEnvironment({
+    ...source,
+    VERCEL_GIT_COMMIT_REF: 'codex/another-feature',
+    VITE_CALCULATORS_ENABLED: 'true',
+  })
+  assert.equal(regularPreview.env.VITE_CALCULATORS_ENABLED, 'false')
+})
+
+test('calculator release branch uses only the homologation backend in preview', () => {
+  const built = getBuildEnvironment({
+    VERCEL: '1',
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_REF: 'codex/publicar-calculadoras',
+    VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_staging_key',
+  })
+  assert.equal(built.isCalculatorPreview, true)
+  assert.equal(built.env.VITE_CALCULATORS_ENABLED, 'true')
+  assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
+})
+
+test('production calculator builds require the official backend and a public key', () => {
+  const source = {
+    VERCEL: '1',
+    VERCEL_ENV: 'production',
+    VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_production_key',
+    VITE_REMINDERS_HOMOLOGATION_ENABLED: 'true',
+  }
+  const built = getBuildEnvironment(source)
+  assert.equal(built.isCalculatorProduction, true)
+  assert.equal(built.env.VITE_CALCULATORS_ENABLED, 'true')
+  assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'false')
+  assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
+
+  for (const patch of [
+    { VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co' },
+    { VITE_SUPABASE_URL: 'https://unrelated.supabase.co' },
+    { VITE_SUPABASE_ANON_KEY: 'sb_secret_not_for_browsers' },
+    { VITE_SUPABASE_SERVICE_ROLE_KEY: 'must-not-be-exposed' },
+  ])
+    assert.throws(
+      () => getBuildEnvironment({ ...source, ...patch }),
+      /Production calculator builds require the production URL and only a public Supabase key/,
+    )
+})
 test('worker handles only same-origin navigations, stores nothing and cannot send push', async () => {
   const source = readFileSync(
     new URL('../public/phase3-sw.js', import.meta.url),

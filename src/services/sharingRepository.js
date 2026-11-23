@@ -126,5 +126,22 @@ export function createSharingRepository(client) {
         throw new Error('Acesso não autorizado ou encerrado pelo paciente.')
       return { profile: profiles[0], entries, habitLogs }
     },
+    async loadPatientProfile(patientId) {
+      const actor = await currentUser()
+      const accessRequestId = createAccessRequestId()
+      const profiles = await loadAuditedHistory(
+        patientId,
+        'profile',
+        accessRequestId,
+      )
+      if (
+        !(await canRead(patientId)) ||
+        !profiles[0] ||
+        profiles[0].id !== patientId ||
+        (await currentUser()).id !== actor.id
+      )
+        throw new Error('Acesso não autorizado ou encerrado pelo paciente.')
+      return profiles[0]
+    },
   }
 }

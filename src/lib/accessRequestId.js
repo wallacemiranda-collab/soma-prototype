@@ -19,6 +19,7 @@ export function createAccessRequestId(cryptoSource = globalThis.crypto) {
 }
 
 export const accessScopeLabels = {
+  calculators: 'calculadoras',
   clinical: 'dados clínicos',
   habits: 'hábitos',
   measurements: 'medidas e evolução',

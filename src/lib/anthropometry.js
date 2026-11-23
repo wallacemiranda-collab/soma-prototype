@@ -45,6 +45,29 @@ export function entryAnthropometry(entry) {
   }
 }
 
+export function latestAnthropometry(entries = []) {
+  function latestWith(field) {
+    return entries.reduce((latest, entry) => {
+      if (
+        entry?.[field] == null ||
+        typeof entry.entry_date !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(entry.entry_date)
+      )
+        return latest
+      return !latest || entry.entry_date > latest.entry_date ? entry : latest
+    }, null)
+  }
+
+  const weightEntry = latestWith('weight_kg')
+  const waistEntry = latestWith('waist_cm')
+  return {
+    weightEntry,
+    waistEntry,
+    bmi: entryAnthropometry(weightEntry).bmi,
+    waistHeight: entryAnthropometry(waistEntry).waistHeight,
+  }
+}
+
 export function entryHeight(profile, existing, date, today) {
   // Never retrofit a past measurement using a height reported later.
   if (

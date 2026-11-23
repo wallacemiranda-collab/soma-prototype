@@ -84,7 +84,7 @@ export default function PatientCalculators() {
       <Card>
         <h2 className="font-semibold text-soma-900">Calculadoras para uso próprio</h2>
         <p className="mt-2 text-sm leading-6 text-soma-700">
-          Esta parte será preenchida após a revisão clínica de cada ferramenta. Nenhum resultado profissional aparece aqui sem compartilhamento explícito.
+          Esta prévia não oferece cálculos para uso próprio. Resultados de FIB-4 aparecem aqui somente após compartilhamento explícito do médico. A ferramenta é uma triagem inicial de risco de fibrose na MASLD, não um diagnóstico.
         </p>
       </Card>
 

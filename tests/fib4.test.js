@@ -41,6 +41,21 @@ test('FIB-4 applies age-specific thresholds and withholds classification below 3
   assert.equal(normal(65, 31).category, 'intermediate')
 })
 
+test('FIB-4 applies the MASLD lower cutoff of 2.0 starting at age 65', () => {
+  const result = (age, ast, platelets = 100) =>
+    calculateFib4(
+      { age_years: age, ast_u_l: ast, alt_u_l: 100, platelets_10e9_l: platelets, test_date: date },
+      { now: new Date('2026-11-23T12:00:00Z') },
+    )
+
+  assert.equal(result(64, 25).low_cutoff, 1.3)
+  assert.equal(result(64, 25).category, 'intermediate')
+  assert.equal(result(65, 25).low_cutoff, 2)
+  assert.equal(result(65, 25).category, 'low')
+  assert.equal(result(65, 20, 65).score, 2)
+  assert.equal(result(65, 20, 65).category, 'intermediate')
+})
+
 test('FIB-4 rejects missing, invalid, future and out-of-range values', () => {
   const valid = {
     age_years: 45,

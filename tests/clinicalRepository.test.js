@@ -19,7 +19,10 @@ function fixture(options = {}) {
             user: options.noSession
               ? null
               : {
-                  id: options.changeAccount && authCalls > 1 ? doctor : patient,
+                  id:
+                    options.changeAccount && authCalls > 1
+                      ? doctor
+                      : (options.userId ?? patient),
                 },
           },
           error: options.authError,
@@ -28,7 +31,10 @@ function fixture(options = {}) {
     },
     async rpc(name, args) {
       calls.push({ rpc: name, args })
-      if (name === 'endo_clinical_overview') {
+      if (
+        name === 'endo_clinical_overview' ||
+        name === 'endo_audited_clinical_overview'
+      ) {
         overviewCalls++
         return {
           data: options.malformedOverview
@@ -40,6 +46,11 @@ function fixture(options = {}) {
               : options.error,
         }
       }
+      if (name === 'endo_doctor_clinical_page')
+        return {
+          data: options.rows?.[args.p_resource] ?? [],
+          error: options.error,
+        }
       return { data: { id: request }, error: options.error }
     },
     from(table) {
@@ -125,6 +136,38 @@ test('clinical reads scope every paginated table to the authenticated patient an
       .filter((call) => call.table === 'glucose_readings')
       .some((call) => call.range[0] === 500),
   )
+})
+test('doctor clinical reads use audited RPC pages with one access identity and no direct table reads', async () => {
+  const f = fixture({
+    userId: doctor,
+    rows: {
+      glucose_readings: [{ id: request, value: 123 }],
+    },
+  })
+  const result = await f.repository.loadPatient(patient)
+  assert.equal(result.records[0].id, request)
+  const overviewCalls = f.calls.filter(
+    (call) => call.rpc === 'endo_audited_clinical_overview',
+  )
+  const pageCalls = f.calls.filter(
+    (call) => call.rpc === 'endo_doctor_clinical_page',
+  )
+  assert.equal(overviewCalls.length, 2)
+  assert.ok(pageCalls.length > 0)
+  assert.ok(
+    [...overviewCalls, ...pageCalls].every(
+      (call) => call.args.p_patient_id === patient,
+    ),
+  )
+  assert.equal(
+    new Set(
+      [...overviewCalls, ...pageCalls].map(
+        (call) => call.args.p_access_request_id,
+      ),
+    ).size,
+    1,
+  )
+  assert.equal(f.calls.some((call) => call.table), false)
 })
 test('authorization, table failures, malformed overview and account changes fail closed', async () => {
   for (const options of [

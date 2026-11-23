@@ -3,7 +3,7 @@ import {
   validateDoctorProfile,
   validateSharing,
 } from '../lib/sharing.js'
-import { loadHistory } from './patientHistory.js'
+import { createAccessRequestId } from '../lib/accessRequestId.js'
 
 export function createSharingRepository(client) {
   async function currentUser() {
@@ -26,6 +26,22 @@ export function createSharingRepository(client) {
     return (
       (await rpc('endo_can_read_patient', { p_patient_id: patientId })) === true
     )
+  }
+  async function loadAuditedHistory(patientId, resource, accessRequestId) {
+    const rows = []
+    for (let offset = 0; ; offset += 500) {
+      const page = await rpc('endo_audited_patient_page', {
+        p_patient_id: patientId,
+        p_resource: resource,
+        p_offset: offset,
+        p_limit: 500,
+        p_access_request_id: accessRequestId,
+      })
+      if (!Array.isArray(page))
+        throw new Error('Não foi possível confirmar o histórico autorizado.')
+      rows.push(...page)
+      if (page.length < 500) return rows
+    }
   }
   return {
     async listDoctors() {
@@ -84,18 +100,29 @@ export function createSharingRepository(client) {
     async listPatients() {
       return (await rpc('endo_my_patients')) ?? []
     },
+    async loadAccessHistory(limit = 50, offset = 0) {
+      const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200)
+      const safeOffset = Math.min(Math.max(Number(offset) || 0, 0), 10000000)
+      return (await rpc('endo_patient_access_history', {
+        p_limit: safeLimit,
+        p_offset: safeOffset,
+      })) ?? []
+    },
     canRead,
     async loadPatient(patientId) {
-      const profiles = await rpc('endo_shared_profile', {
-        p_patient_id: patientId,
-      })
-      if (!profiles?.[0])
-        throw new Error('Acesso não autorizado ou encerrado pelo paciente.')
+      const accessRequestId = createAccessRequestId()
       const [entries, habitLogs] = await Promise.all([
-        loadHistory(client, 'metabolic_entries', patientId, 'entry_date'),
-        loadHistory(client, 'habit_logs', patientId, 'logged_at'),
+        loadAuditedHistory(patientId, 'entries', accessRequestId),
+        loadAuditedHistory(patientId, 'habits', accessRequestId),
       ])
+      const profiles = await loadAuditedHistory(
+        patientId,
+        'profile',
+        accessRequestId,
+      )
       if (!(await canRead(patientId)))
+        throw new Error('Acesso não autorizado ou encerrado pelo paciente.')
+      if (!profiles[0])
         throw new Error('Acesso não autorizado ou encerrado pelo paciente.')
       return { profile: profiles[0], entries, habitLogs }
     },

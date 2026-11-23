@@ -1213,6 +1213,28 @@ test(
           assert.match(results.at(-1).rows[0].result, /passed$/)
         })
       }
+      await t.test('Phase 8 migration and privacy access-log contract', async () => {
+        const privacyMigration = await readFile(
+          new URL(
+            'supabase/20261123120000_phase8_privacy_access_logs.sql',
+            root,
+          ),
+          'utf8',
+        )
+        await db.exec(
+          'begin;\n' + privacyMigration + '\ncommit;',
+        )
+        await db.exec(
+          'begin;\n' + privacyMigration + '\ncommit;',
+        )
+        const results = await db.exec(
+          await readFile(
+            new URL('supabase/verify-phase8-privacy-access-logs.sql', root),
+            'utf8',
+          ),
+        )
+        assert.match(results.at(-1).rows[0].result, /passed$/)
+      })
     } finally {
       await db.close()
     }

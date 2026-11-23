@@ -36,8 +36,12 @@ function fixture(options = {}) {
         data:
           name === 'endo_can_read_patient'
             ? options.allowed !== false
-            : name === 'endo_shared_profile'
-              ? (options.profiles ?? [{ id: patientId, full_name: 'Patient' }])
+            : name === 'endo_audited_patient_page'
+              ? params.p_resource === 'profile'
+                ? (options.profiles ?? [
+                    { id: patientId, full_name: 'Patient' },
+                  ])
+                : (options.pages?.[params.p_resource] ?? [])
               : [],
         error: options.error ?? null,
       }
@@ -173,6 +177,20 @@ test('professional lookups and lists use the generic RPCs and still validate the
   ])
   const missing = fixture({ noSession: true })
   await assert.rejects(missing.repository.lookupDoctor('NUTRITESTE'))
+  assert.deepEqual(missing.calls, [])
+})
+
+test('patient access history is fetched through its read-only RPC with a bounded size', async () => {
+  const { repository, calls } = fixture()
+  await repository.loadAccessHistory(5000)
+  assert.deepEqual(calls, [
+    {
+      name: 'endo_patient_access_history',
+      params: { p_limit: 200, p_offset: 0 },
+    },
+  ])
+  const missing = fixture({ noSession: true })
+  await assert.rejects(missing.repository.loadAccessHistory())
   assert.deepEqual(missing.calls, [])
 })
 
@@ -313,12 +331,21 @@ test('grant and revoke RPCs cannot accept a forged patient identity', async () =
   })
 })
 
-test('shared reads are scoped to the requested patient and recheck authorization before returning data', async () => {
+test('shared reads use audited pages with one request identity and recheck authorization', async () => {
   const { repository, calls } = fixture()
   const data = await repository.loadPatient(patientId)
   assert.equal(data.profile.id, patientId)
-  for (const call of calls.filter((call) => call.table))
-    assert.deepEqual(call.filters, [['user_id', patientId]])
+  const pages = calls.filter((call) => call.name === 'endo_audited_patient_page')
+  assert.deepEqual(
+    pages.map((call) => call.params.p_resource).sort(),
+    ['entries', 'habits', 'profile'],
+  )
+  assert.ok(pages.every((call) => call.params.p_patient_id === patientId))
+  assert.equal(
+    new Set(pages.map((call) => call.params.p_access_request_id)).size,
+    1,
+  )
+  assert.equal(calls.some((call) => call.table), false)
   assert.equal(calls.at(-1).name, 'endo_can_read_patient')
   await assert.rejects(
     fixture({ allowed: false }).repository.loadPatient(patientId),
@@ -326,10 +353,7 @@ test('shared reads are scoped to the requested patient and recheck authorization
   )
   const empty = fixture({ profiles: [] })
   await assert.rejects(empty.repository.loadPatient(patientId))
-  assert.equal(
-    empty.calls.some((call) => call.table),
-    false,
-  )
+  assert.equal(empty.calls.some((call) => call.table), false)
 })
 
 test('RPC and table failures never produce successful grants or patient data', async () => {

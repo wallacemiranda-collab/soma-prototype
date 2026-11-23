@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePatient } from '../contexts/PatientContext'
 import PatientFindrisc from '../components/PatientFindrisc'
 import PatientSarcF from '../components/PatientSarcF'
+import PatientEag from '../components/PatientEag'
 import {
   anthropometryReferences,
   latestAnthropometry,
@@ -159,6 +160,8 @@ export default function PatientCalculators() {
       />
 
       <PatientSarcF />
+
+      <PatientEag />
 
       <section className="space-y-3" aria-labelledby="shared-calculators-title">
         <h2 id="shared-calculators-title" className="text-lg font-semibold text-soma-900">

@@ -125,6 +125,40 @@ test('reminder homologation builds require a branch-scoped staging publishable k
   })
   assert.equal(normalPreview.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
 })
+
+test('FIB-4 preview is limited to the homologation branch and backend', () => {
+  const source = {
+    VERCEL: '1',
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_REF: 'codex/fase8-privacidade',
+    VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_staging_key',
+  }
+  const built = getBuildEnvironment(source)
+  assert.equal(built.isCalculatorPreview, true)
+  assert.equal(built.env.VITE_CALCULATORS_ENABLED, 'true')
+  assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
+
+  for (const patch of [
+    { VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co' },
+    { VITE_SUPABASE_URL: 'https://unrelated.supabase.co' },
+    { VITE_SUPABASE_ANON_KEY: 'sb_secret_not_for_browsers' },
+    { VITE_SUPABASE_SECRET_KEY: 'must-not-be-exposed' },
+  ])
+    assert.throws(
+      () => getBuildEnvironment({ ...source, ...patch }),
+      /homologation URL and a public staging key/,
+    )
+
+  const regularPreview = getBuildEnvironment({
+    ...source,
+    VERCEL_GIT_COMMIT_REF: 'codex/another-feature',
+    VITE_CALCULATORS_ENABLED: 'true',
+  })
+  assert.equal(regularPreview.env.VITE_CALCULATORS_ENABLED, 'false')
+})
 test('worker handles only same-origin navigations, stores nothing and cannot send push', async () => {
   const source = readFileSync(
     new URL('../public/phase3-sw.js', import.meta.url),

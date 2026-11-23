@@ -356,6 +356,24 @@ test('shared reads use audited pages with one request identity and recheck autho
   assert.equal(empty.calls.some((call) => call.table), false)
 })
 
+test('calculator profile lookup audits only the explicitly authorized patient profile', async () => {
+  const { repository, calls } = fixture()
+  assert.equal((await repository.loadPatientProfile(patientId)).id, patientId)
+  const pages = calls.filter((call) => call.name === 'endo_audited_patient_page')
+  assert.equal(pages.length, 1)
+  assert.equal(pages[0].params.p_patient_id, patientId)
+  assert.equal(pages[0].params.p_resource, 'profile')
+  assert.match(pages[0].params.p_access_request_id, /^[0-9a-f-]{36}$/)
+  assert.equal(calls.some((call) => call.table), false)
+  assert.equal(calls.at(-1).name, 'endo_can_read_patient')
+  await assert.rejects(
+    fixture({ profiles: [{ id: doctorId }] }).repository.loadPatientProfile(
+      patientId,
+    ),
+    /Acesso/,
+  )
+})
+
 test('RPC and table failures never produce successful grants or patient data', async () => {
   const error = new Error('Synthetic backend failure')
   const { repository } = fixture({ error })

@@ -6,7 +6,9 @@ import { isValidVapidPublicKey } from '../src/lib/webPush.js'
 
 const phase3Branch = 'codex/fase3-previa'
 const reminderHomologationBranch = 'codex/lembretes-homologacao'
+const calculatorPreviewBranch = 'codex/fase8-privacidade'
 const reminderHomologationProject = 'ctcsolobseerqnddahun'
+const calculatorPreviewProject = 'ctcsolobseerqnddahun'
 const phase3Environment = {
   VITE_PHASE3_PREVIEW_ENABLED: 'true',
   VITE_SUPABASE_URL: '',
@@ -25,6 +27,15 @@ const reminderHomologationEnvironment = {
   VITE_CLINICAL_PREVIEW_ENABLED: 'false',
   VITE_GOOGLE_AUTH_ENABLED: 'false',
 }
+const calculatorPreviewEnvironment = {
+  VITE_CALCULATORS_ENABLED: 'true',
+  VITE_HOMOLOGATION_ENABLED: 'true',
+  VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
+  VITE_CLINICAL_PREVIEW_ENABLED: 'false',
+  VITE_PHASE3_PREVIEW_ENABLED: 'false',
+  VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
+  VITE_GOOGLE_AUTH_ENABLED: 'false',
+}
 
 export function getBuildEnvironment(environment = process.env) {
   const env = { ...environment }
@@ -40,6 +51,8 @@ export function getBuildEnvironment(environment = process.env) {
   const isReminderHomologationPreview =
     isVercelPreview &&
     env.VERCEL_GIT_COMMIT_REF === reminderHomologationBranch
+  const isCalculatorPreview =
+    isVercelPreview && env.VERCEL_GIT_COMMIT_REF === calculatorPreviewBranch
 
   if (isPhase3Preview) Object.assign(env, phase3Environment)
   else if (isReminderHomologationPreview) {
@@ -60,13 +73,34 @@ export function getBuildEnvironment(environment = process.env) {
         'Reminder homologation builds require the staging URL, publishable staging key, and a valid public push key.',
       )
     Object.assign(env, reminderHomologationEnvironment)
-  }
-  else if (isVercelPreview || isVercelProduction) {
+  } else if (isCalculatorPreview) {
+    const forbiddenClientKeys = Object.keys(env).filter(
+      (key) =>
+        key.startsWith('VITE_') &&
+        /(SERVICE_ROLE|SECRET|PRIVATE|PASSWORD)/i.test(key) &&
+        env[key],
+    )
+    if (
+      env.VITE_SUPABASE_URL !== `https://${calculatorPreviewProject}.supabase.co` ||
+      !env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_') ||
+      forbiddenClientKeys.length
+    )
+      throw new Error(
+        'Calculator preview builds require only the homologation URL and a public staging key.',
+      )
+    Object.assign(env, calculatorPreviewEnvironment)
+  } else if (isVercelPreview || isVercelProduction) {
     env.VITE_PHASE3_PREVIEW_ENABLED = 'false'
     env.VITE_REMINDERS_HOMOLOGATION_ENABLED = 'false'
+    env.VITE_CALCULATORS_ENABLED = 'false'
   }
 
-  return { env, isPhase3Preview, isReminderHomologationPreview }
+  return {
+    env,
+    isPhase3Preview,
+    isReminderHomologationPreview,
+    isCalculatorPreview,
+  }
 }
 
 export function build() {

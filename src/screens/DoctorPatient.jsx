@@ -6,9 +6,12 @@ import { EvolutionContent } from './Evolution'
 import { formatNumber, sexOptions } from '../lib/patientData'
 import { sharingRepository } from '../services/sharingService'
 import { clinicalIntegrationEnabled } from '../config/clinicalPreview'
+import { calculatorsEnabled } from '../config/calculators.js'
+import { useDoctor } from '../components/DoctorShell'
 
 export default function DoctorPatient() {
   const { patientId } = useParams()
+  const { profile: professional } = useDoctor()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [reload, setReload] = useState(0)
@@ -81,6 +84,14 @@ export default function DoctorPatient() {
       ) : (
         <>
           <MetabolicCard className="mb-6">
+            {calculatorsEnabled && professional?.council === 'CRM' && (
+              <Link
+                to={`/profissional/pacientes/${patientId}/calculadoras`}
+                className="mb-4 block rounded-xl bg-soma-100 px-4 py-3 font-semibold text-soma-800"
+              >
+                Abrir calculadoras profissionais
+              </Link>
+            )}
             {clinicalIntegrationEnabled && (
               <Link
                 to={`/profissional/pacientes/${patientId}/cuidados`}

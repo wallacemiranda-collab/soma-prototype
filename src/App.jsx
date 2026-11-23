@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import MobileShell from './components/MobileShell'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -30,6 +30,7 @@ import ReminderPreview from './screens/ReminderPreview'
 import HomologationReminders from './screens/HomologationReminders'
 import { homologationEnabled } from './config/homologation'
 import { remindersHomologationEnabled } from './config/reminders'
+import { calculatorsEnabled } from './config/calculators.js'
 import {
   ClinicalDoctorPreview,
   ClinicalHub,
@@ -39,6 +40,9 @@ import {
   ClinicalDoctorWorkspace,
   ClinicalPatientWorkspace,
 } from './screens/ClinicalWorkspace'
+
+const DoctorCalculator = lazy(() => import('./screens/DoctorCalculator'))
+const PatientCalculators = lazy(() => import('./screens/PatientCalculators'))
 
 export default function App() {
   useEffect(() => {
@@ -76,6 +80,16 @@ export default function App() {
                   <Route path="/perfil" element={<Profile />} />
                   <Route path="/registro" element={<PatientEntry />} />
                   <Route path="/compartilhar" element={<Sharing />} />
+                  {calculatorsEnabled && (
+                    <Route
+                      path="/calculadoras"
+                      element={
+                        <Suspense fallback={<p role="status">Carregando...</p>}>
+                          <PatientCalculators />
+                        </Suspense>
+                      }
+                    />
+                  )}
                   {(phase3Preview.allowed || remindersHomologationEnabled) && (
                     <Route
                       path="/lembretes"
@@ -103,6 +117,16 @@ export default function App() {
                   />
                 </Route>
                 <Route element={<DoctorShell />}>
+                  {calculatorsEnabled && (
+                    <Route
+                      path="/profissional/pacientes/:patientId/calculadoras"
+                      element={
+                        <Suspense fallback={<p role="status">Carregando...</p>}>
+                          <DoctorCalculator />
+                        </Suspense>
+                      }
+                    />
+                  )}
                   <Route
                     path="/profissional/pacientes/:patientId/cuidados"
                     element={<ClinicalDoctorWorkspace />}

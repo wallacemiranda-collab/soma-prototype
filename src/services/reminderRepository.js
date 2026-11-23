@@ -6,6 +6,7 @@ import {
 import { isSyntheticPatient } from '../lib/reminderFeature.js'
 
 export const reminderConsentVersion = 'endo-reminders-homologation-v1'
+export const reminderPushConsentVersion = 'endo-reminder-push-homologation-v1'
 
 export function createReminderRepository(
   client,
@@ -93,6 +94,47 @@ export function createReminderRepository(
 
   return {
     load,
+    async hasPushSubscription(patientId, endpoint) {
+      await currentPatient(patientId)
+      if (typeof endpoint !== 'string' || endpoint.length > 2048) return false
+      const response = await client
+        .from('patient_reminder_push_subscriptions')
+        .select('id')
+        .eq('endpoint', endpoint)
+        .maybeSingle()
+      return Boolean(result(response))
+    },
+    async savePushSubscription(
+      patientId,
+      subscription,
+      { consentAccepted = false } = {},
+    ) {
+      await currentPatient(patientId)
+      if (consentAccepted !== true)
+        throw new Error('Autorize as notificações neste aparelho antes de continuar.')
+      if (
+        !subscription ||
+        typeof subscription.endpoint !== 'string' ||
+        !subscription.keys ||
+        typeof subscription.keys.p256dh !== 'string' ||
+        typeof subscription.keys.auth !== 'string'
+      )
+        throw new Error('O navegador não forneceu uma inscrição válida.')
+      result(
+        await client.rpc('endo_upsert_patient_reminder_push_subscription', {
+          p_subscription: subscription,
+          p_consent_accepted: true,
+        }),
+      )
+    },
+    async removePushSubscription(patientId, endpoint = null) {
+      await currentPatient(patientId)
+      result(
+        await client.rpc('endo_remove_patient_reminder_push_subscription', {
+          p_endpoint: endpoint,
+        }),
+      )
+    },
     async save(patientId, value, { consentAccepted = false } = {}) {
       await currentPatient(patientId)
       const schedule = validateReminderPreview(value)

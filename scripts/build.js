@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { isValidVapidPublicKey } from '../src/lib/webPush.js'
 
 const phase3Branch = 'codex/fase3-previa'
 const reminderHomologationBranch = 'codex/lembretes-homologacao'
@@ -52,10 +53,11 @@ export function getBuildEnvironment(environment = process.env) {
       env.VITE_SUPABASE_URL !==
         `https://${reminderHomologationProject}.supabase.co` ||
       !env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_') ||
+      !isValidVapidPublicKey(env.VITE_REMINDER_VAPID_PUBLIC_KEY) ||
       forbiddenClientKeys.length
     )
       throw new Error(
-        'Reminder homologation builds require only the staging URL and a publishable staging key.',
+        'Reminder homologation builds require the staging URL, publishable staging key, and a valid public push key.',
       )
     Object.assign(env, reminderHomologationEnvironment)
   }

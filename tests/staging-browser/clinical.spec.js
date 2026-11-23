@@ -178,12 +178,12 @@ test('a physician sees authorized history and persists a new plan without editin
   ).toHaveCount(0)
 })
 
-test('patient consent saves homologation reminders and revocation clears the schedule without push', async ({
+test('patient consent saves a schedule without prompting for push until device authorization', async ({
   page,
 }) => {
   await login(page, patient)
   await page.goto('/lembretes')
-  await expect(page.getByText('Homologação: sem notificações enviadas')).toBeVisible()
+  await expect(page.getByText('Homologação: somente contas fictícias')).toBeVisible()
   await page.getByLabel('Ativar minha agenda salva').check()
   await page.getByLabel('Lembrete de rotina com medicamento').check()
   await page.getByText(/Autorizo salvar estes horários na minha conta fictícia/).click()

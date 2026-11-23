@@ -99,6 +99,7 @@ test('reminder homologation builds require a branch-scoped staging publishable k
     VERCEL_GIT_COMMIT_REF: 'codex/lembretes-homologacao',
     VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co',
     VITE_SUPABASE_ANON_KEY: 'sb_publishable_staging_key',
+    VITE_REMINDER_VAPID_PUBLIC_KEY: `B${'A'.repeat(86)}`,
   }
   const built = getBuildEnvironment(source)
   assert.equal(built.isReminderHomologationPreview, true)
@@ -115,7 +116,7 @@ test('reminder homologation builds require a branch-scoped staging publishable k
   ])
     assert.throws(
       () => getBuildEnvironment({ ...source, ...patch }),
-      /staging URL and a publishable staging key/,
+      /staging URL, publishable staging key, and a valid public push key/,
     )
 
   const normalPreview = getBuildEnvironment({

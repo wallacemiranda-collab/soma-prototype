@@ -3,6 +3,7 @@ import { Card, Feedback } from '../components/ui'
 import { calculatorsEnabled } from '../config/calculators.js'
 import { useAuth } from '../contexts/AuthContext'
 import { usePatient } from '../contexts/PatientContext'
+import PatientFindrisc from '../components/PatientFindrisc'
 import {
   anthropometryReferences,
   latestAnthropometry,
@@ -36,7 +37,7 @@ function dateLabel(value) {
 
 export default function PatientCalculators() {
   const { isDemo, user } = useAuth()
-  const { entries, isLoading: patientLoading } = usePatient()
+  const { entries, profile, isLoading: patientLoading } = usePatient()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -149,6 +150,12 @@ export default function PatientCalculators() {
           FIB-4 e outros resultados do profissional aparecem em uma seção separada, somente após compartilhamento explícito.
         </p>
       </Card>
+
+      <PatientFindrisc
+        profile={profile}
+        entries={entries}
+        loading={patientLoading}
+      />
 
       <section className="space-y-3" aria-labelledby="shared-calculators-title">
         <h2 id="shared-calculators-title" className="text-lg font-semibold text-soma-900">

@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { Card, Feedback } from '../components/ui'
 import { calculatorsEnabled } from '../config/calculators.js'
 import { useAuth } from '../contexts/AuthContext'
+import { usePatient } from '../contexts/PatientContext'
+import {
+  anthropometryReferences,
+  latestAnthropometry,
+} from '../lib/anthropometry.js'
+import { formatDate, formatNumber } from '../lib/patientData.js'
 import { calculatorRepository } from '../services/calculatorService.js'
 
 function scoreLabel(value) {
@@ -30,10 +36,13 @@ function dateLabel(value) {
 
 export default function PatientCalculators() {
   const { isDemo, user } = useAuth()
+  const { entries, isLoading: patientLoading } = usePatient()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState('')
+  const { weightEntry, waistEntry, bmi, waistHeight } =
+    latestAnthropometry(entries)
 
   useEffect(() => {
     let active = true
@@ -78,13 +87,66 @@ export default function PatientCalculators() {
     <div className="space-y-5">
       <header>
         <h1 className="text-2xl font-semibold text-soma-950">Calculadoras</h1>
-        <p className="mt-1 text-soma-700">Resultados compartilhados com você</p>
+        <p className="mt-1 text-soma-700">
+          Suas medidas e resultados compartilhados
+        </p>
       </header>
 
       <Card>
         <h2 className="font-semibold text-soma-900">Calculadoras para uso próprio</h2>
         <p className="mt-2 text-sm leading-6 text-soma-700">
-          Esta prévia não oferece cálculos para uso próprio. Resultados de FIB-4 aparecem aqui somente após compartilhamento explícito do médico. A ferramenta é uma triagem inicial de risco de fibrose na MASLD, não um diagnóstico.
+          Acompanhe medidas calculadas a partir dos seus próprios registros. Elas não indicam diagnóstico nem classificam risco. Cada cálculo usa a altura anotada junto à respectiva medida.
+        </p>
+        {patientLoading ? (
+          <p role="status" className="mt-4 text-sm text-soma-600">
+            Carregando seus registros...
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <MetricResult
+              title="Índice de massa corporal (IMC)"
+              value={
+                bmi === null ? 'Sem cálculo' : `${formatNumber(bmi)} kg/m²`
+              }
+              detail={weightEntry
+                ? bmi === null
+                  ? `Anotação de ${formatDate(weightEntry.entry_date)} sem altura de referência.`
+                  : `${formatDate(weightEntry.entry_date)} · altura ${formatNumber(weightEntry.height_cm, ' cm')}`
+                : 'Registre seu peso para acompanhar esta medida.'}
+            />
+            <MetricResult
+              title="Relação cintura/altura"
+              value={
+                waistHeight === null
+                  ? 'Sem cálculo'
+                  : new Intl.NumberFormat('pt-BR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(waistHeight)
+              }
+              detail={waistEntry
+                ? waistHeight === null
+                  ? `Anotação de ${formatDate(waistEntry.entry_date)} sem altura de referência.`
+                  : `${formatDate(waistEntry.entry_date)} · altura ${formatNumber(waistEntry.height_cm, ' cm')}`
+                : 'Registre sua cintura para acompanhar esta medida.'}
+            />
+          </div>
+        )}
+        <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-soma-600">
+          {anthropometryReferences.map((reference) => (
+            <a
+              key={reference.url}
+              href={reference.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              {reference.title}
+            </a>
+          ))}
+        </div>
+        <p className="mt-4 border-t border-soma-100 pt-4 text-sm leading-6 text-soma-700">
+          FIB-4 e outros resultados do profissional aparecem em uma seção separada, somente após compartilhamento explícito.
         </p>
       </Card>
 
@@ -135,6 +197,16 @@ export default function PatientCalculators() {
         )}
       </section>
       {error && <Feedback error={error} />}
+    </div>
+  )
+}
+
+function MetricResult({ title, value, detail }) {
+  return (
+    <div className="rounded-2xl bg-soma-50 p-4">
+      <h3 className="text-sm font-medium text-soma-700">{title}</h3>
+      <p className="mt-2 text-xl font-semibold text-soma-950">{value}</p>
+      <p className="mt-2 text-xs leading-5 text-soma-600">{detail}</p>
     </div>
   )
 }

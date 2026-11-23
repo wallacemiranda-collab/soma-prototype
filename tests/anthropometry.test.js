@@ -4,6 +4,7 @@ import {
   bodyMassIndex,
   waistHeightRatio,
   entryAnthropometry,
+  latestAnthropometry,
   entryHeight,
   anthropometryReferences,
 } from '../src/lib/anthropometry.js'
@@ -68,6 +69,41 @@ test('historical metrics never borrow height from a later profile or another rec
   assert.equal(Number(entryAnthropometry(record).bmi.toFixed(1)), 22.9)
   assert.deepEqual(old, { weight_kg: 70, waist_cm: 96.5, height_cm: null })
   assert.deepEqual(entryAnthropometry(undefined), {
+    bmi: null,
+    waistHeight: null,
+  })
+})
+
+test('latest patient metrics use their own most recent dated entry and never borrow height', () => {
+  const result = latestAnthropometry([
+    {
+      entry_date: '2026-05-20',
+      weight_kg: 70,
+      waist_cm: 96.5,
+      height_cm: 175,
+    },
+    { entry_date: '2026-05-25', weight_kg: 69, height_cm: null },
+    { entry_date: '2026-05-27', waist_cm: 95, height_cm: null },
+  ])
+
+  assert.equal(result.weightEntry.entry_date, '2026-05-25')
+  assert.equal(result.waistEntry.entry_date, '2026-05-27')
+  assert.equal(result.bmi, null)
+  assert.equal(result.waistHeight, null)
+
+  const complete = latestAnthropometry([
+    { entry_date: '2026-05-25', weight_kg: 69, height_cm: 175 },
+    { entry_date: '2026-05-20', waist_cm: 96.5, height_cm: 170 },
+    { entry_date: '2026-05-27', waist_cm: 95, height_cm: 175 },
+  ])
+  assert.equal(complete.bmi, 69 / 1.75 ** 2)
+  assert.equal(complete.waistHeight, 95 / 175)
+})
+
+test('latest patient metrics return empty entries when no measurements exist', () => {
+  assert.deepEqual(latestAnthropometry([]), {
+    weightEntry: null,
+    waistEntry: null,
     bmi: null,
     waistHeight: null,
   })

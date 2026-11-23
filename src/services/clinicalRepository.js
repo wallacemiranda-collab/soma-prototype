@@ -9,6 +9,7 @@ import {
   correctionReason,
   resolveClinicalHistory,
 } from '../lib/clinicalCorrections.js'
+import { createAccessRequestId } from '../lib/accessRequestId.js'
 
 const recordTables = {
   glucose: 'glucose_readings',
@@ -63,19 +64,30 @@ export function createClinicalRepository(
       throw new Error('A conta mudou. Recarregue para continuar.')
     return data
   }
-  async function history(table, patientId, dateKey) {
+  async function history(table, patientId, dateKey, accessRequestId = null) {
     const rows = []
     for (let offset = 0; ; offset += 500) {
-      const page =
-        result(
-          await client
-            .from(table)
-            .select('*')
-            .eq('patient_id', patientId)
-            .order(dateKey, { ascending: false })
-            .order('id', { ascending: false })
-            .range(offset, offset + 499),
-        ) ?? []
+      const page = accessRequestId
+        ? result(
+            await client.rpc('endo_doctor_clinical_page', {
+              p_patient_id: patientId,
+              p_resource: table,
+              p_offset: offset,
+              p_limit: 500,
+              p_access_request_id: accessRequestId,
+            }),
+          )
+        : result(
+            await client
+              .from(table)
+              .select('*')
+              .eq('patient_id', patientId)
+              .order(dateKey, { ascending: false })
+              .order('id', { ascending: false })
+              .range(offset, offset + 499),
+          )
+      if (!Array.isArray(page))
+        throw new Error('Não foi possível confirmar o histórico clínico.')
       rows.push(
         ...page.map((row) => {
           const next = { ...row }
@@ -114,8 +126,19 @@ export function createClinicalRepository(
     const user = await currentUser()
     if (expectedUser !== null && user.id !== expectedUser)
       throw new Error('A conta mudou. Recarregue para continuar.')
+    const accessRequestId = patientId === user.id ? null : createAccessRequestId()
     const overview = result(
-      await client.rpc('endo_clinical_overview', { p_patient_id: patientId }),
+      await client.rpc(
+        accessRequestId
+          ? 'endo_audited_clinical_overview'
+          : 'endo_clinical_overview',
+        accessRequestId
+          ? {
+              p_patient_id: patientId,
+              p_access_request_id: accessRequestId,
+            }
+          : { p_patient_id: patientId },
+      ),
     )
     if (
       !overview ||
@@ -124,13 +147,19 @@ export function createClinicalRepository(
     )
       throw new Error('Não foi possível confirmar os módulos autorizados.')
     const [versions, ...recordGroups] = await Promise.all([
-      history('clinical_module_versions', patientId, 'created_at'),
+      history(
+        'clinical_module_versions',
+        patientId,
+        'created_at',
+        accessRequestId,
+      ),
       ...Object.entries(recordTables).map(async ([kind, table]) =>
         (
           await history(
             table,
             patientId,
             kind === 'hba1c' ? 'occurred_on' : 'occurred_at',
+            accessRequestId,
           )
         ).map((row) => ({ ...row, kind })),
       ),
@@ -140,6 +169,7 @@ export function createClinicalRepository(
       'clinical_record_corrections',
       patientId,
       'created_at',
+      accessRequestId,
     )
     const resolved = resolveClinicalHistory(
       recordGroups.flat(),
@@ -150,7 +180,17 @@ export function createClinicalRepository(
     if ((await currentUser()).id !== user.id)
       throw new Error('A conta mudou. Recarregue para continuar.')
     const fresh = result(
-      await client.rpc('endo_clinical_overview', { p_patient_id: patientId }),
+      await client.rpc(
+        accessRequestId
+          ? 'endo_audited_clinical_overview'
+          : 'endo_clinical_overview',
+        accessRequestId
+          ? {
+              p_patient_id: patientId,
+              p_access_request_id: accessRequestId,
+            }
+          : { p_patient_id: patientId },
+      ),
     )
     if (
       !fresh ||

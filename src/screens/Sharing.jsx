@@ -13,11 +13,17 @@ import {
   sharingStatus,
   professionalIdentity,
 } from '../lib/sharing'
+import { accessScopeLabels } from '../lib/accessRequestId'
 import { sharingRepository } from '../services/sharingService'
 
 export default function Sharing() {
   const { isDemo } = useAuth()
   const [doctors, setDoctors] = useState([])
+  const [accessHistory, setAccessHistory] = useState([])
+  const [accessHistoryLoading, setAccessHistoryLoading] = useState(!isDemo)
+  const [accessHistoryHasMore, setAccessHistoryHasMore] = useState(false)
+  const [accessHistoryMoreLoading, setAccessHistoryMoreLoading] = useState(false)
+  const [accessHistoryError, setAccessHistoryError] = useState('')
   const [code, setCode] = useState('')
   const [selected, setSelected] = useState(null)
   const [days, setDays] = useState('30')
@@ -52,6 +58,57 @@ export default function Sharing() {
       active = false
     }
   }, [isDemo, reload])
+  useEffect(() => {
+    if (isDemo) {
+      setAccessHistory([])
+      setAccessHistoryLoading(false)
+      setAccessHistoryHasMore(false)
+      setAccessHistoryError('')
+      return
+    }
+    let active = true
+    setAccessHistoryLoading(true)
+    setAccessHistoryHasMore(false)
+    setAccessHistoryError('')
+    sharingRepository
+      .loadAccessHistory()
+      .then((rows) => {
+        if (active) {
+          setAccessHistory(rows)
+          setAccessHistoryHasMore(rows.length === 50)
+          setAccessHistoryError('')
+        }
+      })
+      .catch(() => {
+        if (active)
+          setAccessHistoryError(
+            'Não foi possível carregar o histórico de consultas agora.',
+          )
+      })
+      .finally(() => {
+        if (active) setAccessHistoryLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [isDemo, reload])
+  async function loadMoreAccessHistory() {
+    if (accessHistoryMoreLoading || accessHistoryLoading || isDemo) return
+    setAccessHistoryMoreLoading(true)
+    setAccessHistoryError('')
+    try {
+      const rows = await sharingRepository.loadAccessHistory(
+        50,
+        accessHistory.length,
+      )
+      setAccessHistory((current) => [...current, ...rows])
+      setAccessHistoryHasMore(rows.length === 50)
+    } catch {
+      setAccessHistoryError('Não foi possível carregar mais consultas agora.')
+    } finally {
+      setAccessHistoryMoreLoading(false)
+    }
+  }
   async function lookup(event) {
     event.preventDefault()
     if (pending || isDemo) return
@@ -266,6 +323,77 @@ export default function Sharing() {
             className="py-3 text-sm font-semibold text-soma-700"
           >
             Atualizar compartilhamentos
+          </button>
+        )}
+      </section>
+      <section className="mt-7 space-y-3" aria-labelledby="access-history-title">
+        <div>
+          <h2 id="access-history-title" className="text-lg font-semibold">
+            Consultas à sua evolução
+          </h2>
+          <p className="mt-1 text-sm text-soma-600">
+            As consultas são registradas a partir da ativação deste histórico.
+          </p>
+        </div>
+        {isDemo ? (
+          <p className="text-sm text-soma-600">
+            A demonstração usa dados fictícios e não registra consultas reais.
+          </p>
+        ) : accessHistoryLoading ? (
+          <p role="status" className="text-sm text-soma-600">
+            Carregando consultas recentes...
+          </p>
+        ) : accessHistory.length ? (
+          accessHistory.map((access) => {
+            const timestamp = new Date(access.accessed_at)
+            const dateLabel = Number.isNaN(timestamp.getTime())
+              ? 'Data indisponível'
+              : new Intl.DateTimeFormat('pt-BR', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                }).format(timestamp)
+            const scopes = (access.scopes ?? [])
+              .map((scope) => accessScopeLabels[scope])
+              .filter(Boolean)
+            return (
+              <MetabolicCard key={access.id}>
+                <h3 className="break-words font-semibold">
+                  {access.professional_name || 'Profissional de saúde'}
+                </h3>
+                <p className="mt-1 break-words text-sm text-soma-600">
+                  {professionalIdentity(access)}
+                </p>
+                <p className="mt-3 text-sm">
+                  Consultou {scopes.length ? scopes.join(', ') : 'seus dados'}
+                </p>
+                <p className="mt-1 text-xs text-soma-600">{dateLabel}</p>
+              </MetabolicCard>
+            )
+          })
+        ) : accessHistoryError ? (
+          <p role="status" className="text-sm text-soma-600">
+            {accessHistoryError}
+          </p>
+        ) : (
+          <p className="text-sm text-soma-600">
+            Nenhuma consulta foi registrada desde a ativação deste histórico.
+          </p>
+        )}
+        {accessHistoryError && accessHistory.length > 0 && (
+          <p role="status" className="text-sm text-soma-600">
+            {accessHistoryError}
+          </p>
+        )}
+        {accessHistoryHasMore && (
+          <button
+            type="button"
+            onClick={loadMoreAccessHistory}
+            disabled={accessHistoryMoreLoading || accessHistoryLoading}
+            className="min-h-11 py-2 text-sm font-semibold text-soma-700 disabled:opacity-50"
+          >
+            {accessHistoryMoreLoading
+              ? 'Carregando...'
+              : 'Mostrar mais consultas'}
           </button>
         )}
       </section>

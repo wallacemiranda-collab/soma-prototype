@@ -1,7 +1,10 @@
 import { ExternalLink, Search, Youtube } from 'lucide-react'
 import { useState } from 'react'
 import AppHeader from '../components/AppHeader'
+import EatingBehaviorReflection from '../components/EatingBehaviorReflection'
+import ExternalQuestionnaireCard from '../components/ExternalQuestionnaireCard'
 import MetabolicCard from '../components/MetabolicCard'
+import { calculatorsEnabled } from '../config/calculators.js'
 
 const channel = 'https://www.youtube.com/@WallaceMiranda'
 const topics = [
@@ -99,6 +102,29 @@ export default function Education() {
             Buscar no canal
           </a>
         </MetabolicCard>
+      )}
+      {!calculatorsEnabled && (
+        <section className="mt-8 space-y-4" aria-labelledby="eating-behavior-title">
+          <div>
+            <h2
+              id="eating-behavior-title"
+              className="text-lg font-semibold text-soma-900"
+            >
+              Comportamento alimentar
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-soma-600">
+              Conheça alguns padrões e use as perguntas para refletir, sem
+              rótulos ou julgamentos.
+            </p>
+          </div>
+          <ExternalQuestionnaireCard
+            title="Fenótipos do comportamento alimentar (EFCA)"
+            description="A EFCA é uma escala externa. O site pode solicitar um código de acesso; o Endo + não reproduz as perguntas nem calcula o resultado."
+            href="https://comportamientoalimentario.com/"
+            linkLabel="Acessar plataforma externa da EFCA"
+          />
+          <EatingBehaviorReflection />
+        </section>
       )}
     </>
   )

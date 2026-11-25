@@ -80,16 +80,14 @@ export default function App() {
                   <Route path="/perfil" element={<Profile />} />
                   <Route path="/registro" element={<PatientEntry />} />
                   <Route path="/compartilhar" element={<Sharing />} />
-                  {calculatorsEnabled && (
-                    <Route
-                      path="/calculadoras"
-                      element={
-                        <Suspense fallback={<p role="status">Carregando...</p>}>
-                          <PatientCalculators />
-                        </Suspense>
-                      }
-                    />
-                  )}
+                  <Route
+                    path="/calculadoras"
+                    element={
+                      <Suspense fallback={<p role="status">Carregando...</p>}>
+                        <PatientCalculators />
+                      </Suspense>
+                    }
+                  />
                   {(phase3Preview.allowed || remindersHomologationEnabled) && (
                     <Route
                       path="/lembretes"

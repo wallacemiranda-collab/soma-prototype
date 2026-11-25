@@ -47,8 +47,9 @@ export function EvolutionContent({ entries, habitLogs, readOnly = false }) {
     .reverse()
   const latestWeight = weights.at(-1)
   const latestWaist = waists.at(-1)
-  const bmi = entryAnthropometry(latestWeight).bmi
-  const ratio = entryAnthropometry(latestWaist).waistHeight
+  const { bmi, waistHeight: ratio } = readOnly
+    ? entryAnthropometry(latestWeight)
+    : { bmi: null, waistHeight: null }
   return (
     <>
       {readOnly ? (
@@ -109,61 +110,65 @@ export function EvolutionContent({ entries, habitLogs, readOnly = false }) {
           </p>
         </MetabolicCard>
       </section>
-      <section
-        aria-label="Medidas derivadas"
-        className="mt-3 grid grid-cols-2 gap-3"
-      >
-        <MetabolicCard>
-          <h2 className="text-sm text-soma-600">IMC do último peso</h2>
-          <p className="mt-2 text-xl font-semibold">
-            {bmi === null ? 'Sem cálculo' : `${formatNumber(bmi)} kg/m²`}
-          </p>
-          <p className="mt-2 text-xs leading-5 text-soma-600">
-            {bmi === null
-              ? 'Precisa de peso e altura na mesma anotação.'
-              : `${formatDate(latestWeight.entry_date)} · altura ${formatNumber(latestWeight.height_cm, ' cm')}`}
-          </p>
-        </MetabolicCard>
-        <MetabolicCard>
-          <h2 className="text-sm text-soma-600">
-            Cintura/altura da última medida
-          </h2>
-          <p className="mt-2 text-xl font-semibold">
-            {ratio === null
-              ? 'Sem cálculo'
-              : new Intl.NumberFormat('pt-BR', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                }).format(ratio)}
-          </p>
-          <p className="mt-2 text-xs leading-5 text-soma-600">
-            {ratio === null
-              ? 'Precisa de cintura e altura na mesma anotação.'
-              : `${formatDate(latestWaist.entry_date)} · altura ${formatNumber(latestWaist.height_cm, ' cm')}`}
-          </p>
-        </MetabolicCard>
-      </section>
-      <div className="mt-3 text-xs leading-5 text-soma-600">
-        <p>
-          São medidas de acompanhamento, não um diagnóstico. A altura é a
-          registrada em cada anotação; não estimamos alturas ausentes. Este
-          resultado é uma triagem e não substitui avaliação médica. Converse com
-          seu médico.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-          {anthropometryReferences.map((reference) => (
-            <a
-              key={reference.url}
-              href={reference.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              {reference.title}
-            </a>
-          ))}
-        </div>
-      </div>
+      {readOnly && (
+        <>
+          <section
+            aria-label="Medidas derivadas"
+            className="mt-3 grid grid-cols-2 gap-3"
+          >
+            <MetabolicCard>
+              <h2 className="text-sm text-soma-600">IMC do último peso</h2>
+              <p className="mt-2 text-xl font-semibold">
+                {bmi === null ? 'Sem cálculo' : `${formatNumber(bmi)} kg/m²`}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-soma-600">
+                {bmi === null
+                  ? 'Precisa de peso e altura na mesma anotação.'
+                  : `${formatDate(latestWeight.entry_date)} · altura ${formatNumber(latestWeight.height_cm, ' cm')}`}
+              </p>
+            </MetabolicCard>
+            <MetabolicCard>
+              <h2 className="text-sm text-soma-600">
+                Cintura/altura da última medida
+              </h2>
+              <p className="mt-2 text-xl font-semibold">
+                {ratio === null
+                  ? 'Sem cálculo'
+                  : new Intl.NumberFormat('pt-BR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(ratio)}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-soma-600">
+                {ratio === null
+                  ? 'Precisa de cintura e altura na mesma anotação.'
+                  : `${formatDate(latestWaist.entry_date)} · altura ${formatNumber(latestWaist.height_cm, ' cm')}`}
+              </p>
+            </MetabolicCard>
+          </section>
+          <div className="mt-3 text-xs leading-5 text-soma-600">
+            <p>
+              São medidas de acompanhamento, não um diagnóstico. A altura é a
+              registrada em cada anotação; não estimamos alturas ausentes. Este
+              resultado é uma triagem e não substitui avaliação médica. Converse com
+              seu médico.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              {anthropometryReferences.map((reference) => (
+                <a
+                  key={reference.url}
+                  href={reference.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  {reference.title}
+                </a>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
       <MetabolicCard className="mt-5">
         <h2 className="mb-4 font-semibold">Peso registrado</h2>
         {weights.length ? (

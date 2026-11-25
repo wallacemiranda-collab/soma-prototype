@@ -89,6 +89,24 @@ test('demo reload and direct URLs preserve the fictitious session and logout cle
   expect(ui.data().entries).toEqual([])
 })
 
+test('patient calculator tab stays visible and shows external tools only', async ({
+  page,
+  ui,
+}) => {
+  await ui.login()
+  await expect(page.getByRole('link', { name: 'Cálculos', exact: true })).toBeVisible()
+  await page.getByRole('link', { name: 'Cálculos', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Calculadoras', exact: true })).toBeVisible()
+  await expect(page.getByText('STOP-Bang', { exact: true })).toBeVisible()
+  await expect(page.getByText('Escala de Sonolência de Epworth', { exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir ferramenta oficial do STOP-Bang' }))
+    .toHaveAttribute('href', 'https://www.stopbang.ca/')
+  await expect(page.getByRole('link', { name: 'Acessar o site oficial da Epworth' }))
+    .toHaveAttribute('href', 'https://epworthsleepinessscale.com/')
+  for (const label of ['FINDRISC', 'SARC-F', 'PHQ-9', 'GAD-7', 'AUDIT-C'])
+    await expect(page.getByText(label, { exact: true })).toHaveCount(0)
+})
+
 test('daily measures save, survive reload and update the same row', async ({
   page,
   ui,

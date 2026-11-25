@@ -1,7 +1,7 @@
 import { test, expect } from './fixture.js'
 import { dateBefore, localDate } from '../../src/lib/patientData.js'
 
-test('height in Profile persists and creates dated BMI and waist/height only on saved measures', async ({
+test('height persists on dated measures while derived indices stay in the professional view', async ({
   page,
   ui,
 }, testInfo) => {
@@ -20,9 +20,9 @@ test('height in Profile persists and creates dated BMI and waist/height only on 
   await expect(page.getByRole('status')).toContainText('Registro salvo')
   expect(ui.data().entries[0].height_cm).toBe(175)
   await page.getByRole('link', { name: 'Evolução', exact: true }).click()
-  const derived = page.getByRole('region', { name: 'Medidas derivadas' })
-  await expect(derived.getByText('22,9 kg/m²', { exact: true })).toBeVisible()
-  await expect(derived.getByText('0,57', { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Medidas derivadas' })).toHaveCount(0)
+  await expect(page.getByText('22,9 kg/m²', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('0,57', { exact: true })).toHaveCount(0)
   await expect(
     page.getByRole('img', { name: 'Cintura registrada, em centímetros' }),
   ).toBeVisible()
@@ -32,7 +32,7 @@ test('height in Profile persists and creates dated BMI and waist/height only on 
   await expect(page.getByRole('status')).toContainText('Perfil atualizado')
   expect(ui.data().entries[0].height_cm).toBe(175)
   await page.getByRole('link', { name: 'Evolução', exact: true }).click()
-  await expect(derived.getByText('22,9 kg/m²', { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Medidas derivadas' })).toHaveCount(0)
   await page.setViewportSize({ width: 320, height: 800 })
   expect(
     await page.evaluate(
@@ -59,11 +59,7 @@ test('backdated records do not acquire current profile height and old references
   })
   await ui.login()
   await page.goto('/evolucao')
-  await expect(
-    page
-      .getByRole('region', { name: 'Medidas derivadas' })
-      .getByText('Sem cálculo', { exact: true }),
-  ).toHaveCount(2)
+  await expect(page.getByRole('region', { name: 'Medidas derivadas' })).toHaveCount(0)
   await page.getByRole('link', { name: 'Editar registro' }).click()
   await expect(
     page.getByText(/Altura de referência: Sem registro/),
@@ -128,9 +124,9 @@ test('demo height and measures can be explored across reloads without any backen
     'Registro fictício salvo',
   )
   await page.goto('/evolucao')
-  await expect(page.getByText('22,9 kg/m²', { exact: true })).toBeVisible()
+  await expect(page.getByText('22,9 kg/m²', { exact: true })).toHaveCount(0)
   await page.reload()
-  await expect(page.getByText('22,9 kg/m²', { exact: true })).toBeVisible()
+  await expect(page.getByText('22,9 kg/m²', { exact: true })).toHaveCount(0)
   expect(ui.requests).toEqual([])
   expect(ui.data().entries).toEqual([])
   const raw = await page.evaluate(() => sessionStorage.getItem('endo-demo-v1'))

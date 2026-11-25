@@ -12,6 +12,7 @@ import {
 import { localDate } from '../lib/patientData.js'
 import { calculatorRepository } from '../services/calculatorService.js'
 import { sharingRepository } from '../services/sharingService.js'
+import DoctorCalculatorTools from '../components/DoctorCalculatorTools.jsx'
 
 function dateLabel(value) {
   if (!value) return 'Data indisponível'
@@ -321,6 +322,8 @@ export default function DoctorCalculator() {
           </PrimaryButton>
         </Card>
       )}
+
+      <DoctorCalculatorTools />
 
       <Card>
         <h2 className="font-semibold text-soma-900">Referências</h2>

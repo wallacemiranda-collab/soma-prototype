@@ -7,7 +7,7 @@ import { cgmConsentVersion, defaultGlucoseTargets, localDayBoundary } from '../c
 import { RESEARCH_EXPORT_ENABLED } from '../config/phase10'
 import { demoGlp1Course } from '../data/demoGlp1Course'
 import { makeDemoGlucoseCsv } from '../data/demoGlucoseCsv'
-import { agpByHour, calculateCgmMetrics, mergeGlucoseImports, parseLibreViewCsv } from '../lib/cgmImport'
+import { agpByHour, calculateCgmMetrics, mergeGlucoseImports, parseLibreViewCsv, validateGlucoseTargets } from '../lib/cgmImport'
 import { calculateGlp1Metrics, confirmPatientSuspension, professionalAttentionSignals, reportPatientSuspension } from '../lib/glp1Treatment'
 import { Feedback } from '../components/ui'
 
@@ -47,7 +47,7 @@ function courseMetrics() {
   return calculateGlp1Metrics({ ...demoGlp1Course, medicatedPhases, now: TODAY })
 }
 
-function LineChart({ points, label }) {
+function LineChart({ points, label, targets = defaultGlucoseTargets }) {
   if (!points.length) return <p className="text-sm text-soma-600">Ainda não há leituras para este período.</p>
   const values = points.map((item) => item.valueMgDl)
   const min = Math.min(50, ...values)
@@ -63,9 +63,9 @@ function LineChart({ points, label }) {
   return (
     <figure aria-label={label}>
       <svg className="h-40 w-full overflow-visible" viewBox="0 0 320 160" role="img" aria-label={label}>
-        <rect x="0" y={yFor(180)} width="320" height={Math.max(1, yFor(70) - yFor(180))} rx="8" fill="#e8f2f8" />
-        <line x1="0" x2="320" y1={yFor(70)} y2={yFor(70)} stroke="#b9cfdd" strokeDasharray="4 5" />
-        <line x1="0" x2="320" y1={yFor(180)} y2={yFor(180)} stroke="#b9cfdd" strokeDasharray="4 5" />
+        <rect x="0" y={yFor(targets.high)} width="320" height={Math.max(1, yFor(targets.low) - yFor(targets.high))} rx="8" fill="#e8f2f8" />
+        <line x1="0" x2="320" y1={yFor(targets.low)} y2={yFor(targets.low)} stroke="#b9cfdd" strokeDasharray="4 5" />
+        <line x1="0" x2="320" y1={yFor(targets.high)} y2={yFor(targets.high)} stroke="#b9cfdd" strokeDasharray="4 5" />
         <path d={path} fill="none" stroke="#1c75bc" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <figcaption className="mt-2 text-xs text-soma-600">
@@ -122,6 +122,7 @@ export default function IntegrationsPreview() {
   const [sourceConsent, setSourceConsent] = useState(null)
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
   const [expectedInterval, setExpectedInterval] = useState(15)
+  const [glucoseTargets, setGlucoseTargets] = useState(defaultGlucoseTargets)
   const [imported, setImported] = useState(null)
   const [report, setReport] = useState(null)
   const [pdfFile, setPdfFile] = useState(null)
@@ -162,12 +163,12 @@ export default function IntegrationsPreview() {
         start: new Date(start).toISOString(),
         end: new Date(end).toISOString(),
         expectedIntervalMinutes: Number(expectedInterval),
-        targets: defaultGlucoseTargets,
+        targets: glucoseTargets,
       })
     } catch {
       return null
     }
-  }, [imported, startDay, endDay, expectedInterval])
+  }, [imported, startDay, endDay, expectedInterval, glucoseTargets])
   const visibleReadings = imported?.readings.filter((row) => {
     const day = dayKey(row.occurredAt, row.timeZone)
     return day >= startDay && day <= endDay
@@ -311,6 +312,7 @@ export default function IntegrationsPreview() {
 
       {accessAllowed ? (
         <>
+          {isProfessional && <GlucoseTargetsCard targets={glucoseTargets} setTargets={setGlucoseTargets} />}
           {!isProfessional && (
             <MetabolicCard className="mb-4">
               <h3 className="flex items-center gap-2 font-semibold"><FileText size={18} /> Anexar relatório em PDF</h3>
@@ -342,7 +344,7 @@ export default function IntegrationsPreview() {
             </ol>
             {imported && <p className="mt-3 break-all text-xs text-soma-600">{imported.filename} · {imported.format} · fuso {imported.timeZone} · {imported.readings.length} leituras deduplicadas</p>}
           </MetabolicCard>
-          {imported && <GlucoseReview imported={imported} metrics={glucoseMetrics} period={period} setPeriod={setPeriod} customStart={customStart} setCustomStart={setCustomStart} customEnd={customEnd} setCustomEnd={setCustomEnd} startDay={startDay} endDay={endDay} daily={currentDayReadings} weekly={currentWeekReadings} agp={agp} professional={isProfessional} pdfFile={pdfFile} setPdfFile={setPdfFile} />}
+          {imported && <GlucoseReview imported={imported} metrics={glucoseMetrics} period={period} setPeriod={setPeriod} customStart={customStart} setCustomStart={setCustomStart} customEnd={customEnd} setCustomEnd={setCustomEnd} startDay={startDay} endDay={endDay} daily={currentDayReadings} weekly={currentWeekReadings} agp={agp} professional={isProfessional} pdfFile={pdfFile} setPdfFile={setPdfFile} targets={glucoseTargets} />}
         </>
       ) : (
         <MetabolicCard className="mb-4"><p className="text-sm leading-6 text-soma-600">A fonte ainda não foi autorizada. O paciente decide separadamente se deseja compartilhar arquivos de glicose.</p></MetabolicCard>
@@ -367,6 +369,31 @@ function SourceConsentCard({ consent, onChange }) {
         <span>Autorizo o uso dos arquivos de glicose nesta demonstração fictícia.</span>
       </label>
       {consent && <p className="mt-3 text-xs text-soma-600">Versão {consent.version} · registrado em {new Date(consent.grantedAt).toLocaleString('pt-BR')}.</p>}
+    </MetabolicCard>
+  )
+}
+
+function GlucoseTargetsCard({ targets, setTargets }) {
+  let validationMessage = ''
+  try {
+    validateGlucoseTargets(targets)
+  } catch (failure) {
+    validationMessage = failure.message
+  }
+  const fields = [
+    ['veryLow', 'Muito baixo'],
+    ['low', 'Limite inferior'],
+    ['high', 'Limite superior'],
+    ['veryHigh', 'Muito alto'],
+  ]
+  return (
+    <MetabolicCard className="mb-4">
+      <h3 className="font-semibold">Faixas de referência · simulação profissional</h3>
+      <p className="mt-2 text-sm leading-6 text-soma-600">Padrão inicial: 54, 70, 180 e 250 mg/dL. Ajustes ficam só nesta aba e não são recomendações clínicas.</p>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        {fields.map(([key, label]) => <label key={key} className="text-xs font-medium">{label} (mg/dL)<input type="number" min="20" max="1000" step="1" value={targets[key]} onChange={(event) => setTargets((current) => ({ ...current, [key]: Number(event.target.value) }))} className="mt-1 w-full rounded-xl border border-soma-200 px-3 py-3 text-sm" /></label>)}
+      </div>
+      {validationMessage && <p role="alert" className="mt-3 text-xs text-rose-700">{validationMessage}</p>}
     </MetabolicCard>
   )
 }
@@ -481,7 +508,7 @@ function ProfessionalTreatment({ metrics, signals, report, onConfirmStop, examRe
   )
 }
 
-function GlucoseReview({ imported, metrics, period, setPeriod, customStart, setCustomStart, customEnd, setCustomEnd, startDay, endDay, daily, weekly, agp, professional, pdfFile, setPdfFile }) {
+function GlucoseReview({ imported, metrics, period, setPeriod, customStart, setCustomStart, customEnd, setCustomEnd, startDay, endDay, daily, weekly, agp, professional, pdfFile, setPdfFile, targets }) {
   return (
     <>
       <MetabolicCard className="mb-4">
@@ -496,8 +523,8 @@ function GlucoseReview({ imported, metrics, period, setPeriod, customStart, setC
         <>
           {!professional ? (
             <>
-              <MetabolicCard className="mb-4"><h3 className="font-semibold">Glicose no dia mais recente</h3><div className="mt-4"><LineChart points={daily.filter((row) => row.kind === 'automatic')} label="Leituras fictícias do dia" /></div></MetabolicCard>
-              <MetabolicCard className="mb-4"><h3 className="font-semibold">Últimos 7 dias</h3><div className="mt-4"><LineChart points={weekly.filter((row) => row.kind === 'automatic').filter((_, index) => index % 8 === 0)} label="Leituras fictícias dos últimos sete dias" /></div></MetabolicCard>
+              <MetabolicCard className="mb-4"><h3 className="font-semibold">Glicose no dia mais recente</h3><div className="mt-4"><LineChart points={daily.filter((row) => row.kind === 'automatic')} label="Leituras fictícias do dia" targets={targets} /></div></MetabolicCard>
+              <MetabolicCard className="mb-4"><h3 className="font-semibold">Últimos 7 dias</h3><div className="mt-4"><LineChart points={weekly.filter((row) => row.kind === 'automatic').filter((_, index) => index % 8 === 0)} label="Leituras fictícias dos últimos sete dias" targets={targets} /></div></MetabolicCard>
               <div className="grid grid-cols-2 gap-3">
                 <SummaryTile label="Média de glicose" value={`${formatNumber(metrics.meanMgDl)} mg/dL`} />
                 <SummaryTile label="GMI estimado" value={`${formatNumber(metrics.gmi)}%`} />
@@ -513,9 +540,9 @@ function GlucoseReview({ imported, metrics, period, setPeriod, customStart, setC
                 <SummaryTile label="Média de glicose" value={`${formatNumber(metrics.meanMgDl)} mg/dL`} />
                 <SummaryTile label="GMI" value={`${formatNumber(metrics.gmi)}%`} />
                 <SummaryTile label="CV" value={`${formatNumber(metrics.coefficientOfVariation)}%`} />
-                <SummaryTile label="70–180 mg/dL" value={`${formatNumber(metrics.timeInRange)}%`} />
-                <SummaryTile label="Abaixo de 70 / de 54" value={`${formatNumber(metrics.belowRange)}% / ${formatNumber(metrics.below54)}%`} />
-                <SummaryTile label="Acima de 180 / de 250" value={`${formatNumber(metrics.aboveRange)}% / ${formatNumber(metrics.above250)}%`} />
+                <SummaryTile label={`${targets.low}–${targets.high} mg/dL`} value={`${formatNumber(metrics.timeInRange)}%`} />
+                <SummaryTile label={`Abaixo de ${targets.low} / de ${targets.veryLow}`} value={`${formatNumber(metrics.belowRange)}% / ${formatNumber(metrics.below54)}%`} />
+                <SummaryTile label={`Acima de ${targets.high} / de ${targets.veryHigh}`} value={`${formatNumber(metrics.aboveRange)}% / ${formatNumber(metrics.above250)}%`} />
               </div>
               <MetabolicCard className="mt-4">
                 <h3 className="font-semibold">Perfil glicêmico ambulatorial · 24 horas</h3>

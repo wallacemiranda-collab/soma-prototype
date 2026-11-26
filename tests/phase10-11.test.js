@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
 import { calculateGlp1Metrics, confirmPatientSuspension, linkSwitchedCourse, professionalAttentionSignals, reportPatientSuspension, validateDoseChange, validateTreatmentPhase } from '../src/lib/glp1Treatment.js'
-import { agpByHour, calculateCgmMetrics, mergeGlucoseImports, parseLibreViewCsv } from '../src/lib/cgmImport.js'
+import { agpByHour, calculateCgmMetrics, mergeGlucoseImports, parseLibreViewCsv, validateGlucoseTargets } from '../src/lib/cgmImport.js'
 import { makeDemoGlucoseCsv } from '../src/data/demoGlucoseCsv.js'
 import { demoGlp1Course } from '../src/data/demoGlp1Course.js'
 
@@ -128,6 +128,18 @@ test('CGM metrics, scanned rows, AGP and sample calculations', () => {
   assert.equal(metrics.above250, 25)
   assert.equal(metrics.gmi, 3.31 + 0.02392 * 138.75)
   assert.equal(agpByHour(readings)[0].count, 4)
+  const customTargets = validateGlucoseTargets({ veryLow: 60, low: 80, high: 160, veryHigh: 240 })
+  const customMetrics = calculateCgmMetrics(readings, {
+    start: readings[0].occurredAt,
+    end: readings[3].occurredAt,
+    expectedIntervalMinutes: 15,
+    targets: customTargets,
+  })
+  assert.equal(customMetrics.timeInRange, 0)
+  assert.equal(customMetrics.belowRange, 50)
+  assert.equal(customMetrics.aboveRange, 50)
+  assert.throws(() => validateGlucoseTargets({ veryLow: 70, low: 60, high: 180, veryHigh: 250 }), /ordem deve ser/)
+  assert.throws(() => validateGlucoseTargets({ veryLow: 0, low: 70, high: 180, veryHigh: 250 }), /limites de glicose válidos/)
   assert.throws(() => calculateCgmMetrics(readings, { start: 'invalid', end: 'invalid' }), /período válido/)
 })
 

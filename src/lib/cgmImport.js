@@ -156,6 +156,20 @@ export function mergeGlucoseImports(previous, next) {
   }
 }
 
+export function validateGlucoseTargets(targets) {
+  const normalized = {
+    low: Number(targets?.low),
+    high: Number(targets?.high),
+    veryLow: Number(targets?.veryLow),
+    veryHigh: Number(targets?.veryHigh),
+  }
+  if (Object.values(normalized).some((value) => !Number.isFinite(value) || value < 20 || value > 1000))
+    throw new Error('Use limites de glicose válidos entre 20 e 1.000 mg/dL.')
+  if (!(normalized.veryLow < normalized.low && normalized.low < normalized.high && normalized.high < normalized.veryHigh))
+    throw new Error('A ordem deve ser: muito baixo, limite inferior, limite superior e muito alto.')
+  return normalized
+}
+
 export function calculateCgmMetrics(readings, {
   start,
   end,
@@ -168,6 +182,7 @@ export function calculateCgmMetrics(readings, {
     throw new Error('Selecione um período válido.')
   if (!Number.isFinite(expectedIntervalMinutes) || expectedIntervalMinutes < 5 || expectedIntervalMinutes > 1440)
     throw new Error('O intervalo esperado deve ficar entre 5 e 1.440 minutos.')
+  targets = validateGlucoseTargets(targets)
   const values = readings
     .filter((row) => row.kind === 'automatic' && Date.parse(row.occurredAt) >= from && Date.parse(row.occurredAt) <= to)
     .sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))

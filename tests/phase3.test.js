@@ -65,6 +65,7 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
   assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'false')
   assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'false')
   assert.equal(built.env.VITE_GOOGLE_AUTH_ENABLED, 'false')
+  assert.equal(built.env.VITE_FOOD_DIARY_ENABLED, 'false')
   assert.equal(built.env.VITE_PHASE3_PREVIEW_ENABLED, 'true')
   assert.equal(source.VITE_SUPABASE_URL, 'https://production.example.invalid')
 
@@ -105,6 +106,7 @@ test('FIB-4 preview is limited to the homologation branch and backend', () => {
   assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
   assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'true')
   assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
+  assert.equal(built.env.VITE_FOOD_DIARY_ENABLED, 'false')
 
   for (const patch of [
     { VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co' },
@@ -136,6 +138,7 @@ test('calculator release branch uses only the homologation backend in preview', 
   assert.equal(built.isCalculatorPreview, true)
   assert.equal(built.env.VITE_CALCULATORS_ENABLED, 'true')
   assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_FOOD_DIARY_ENABLED, 'false')
 })
 
 test('PREVENT, FRAX, Mayo and patient FINDRISC preview uses only homologation', () => {
@@ -153,6 +156,7 @@ test('PREVENT, FRAX, Mayo and patient FINDRISC preview uses only homologation', 
   assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
   assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'true')
   assert.equal(built.env.VITE_GOOGLE_AUTH_ENABLED, 'false')
+  assert.equal(built.env.VITE_FOOD_DIARY_ENABLED, 'false')
   assert.throws(
     () => getBuildEnvironment({
       ...source,
@@ -176,6 +180,7 @@ test('production calculator builds require the official backend and a public key
   assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'false')
   assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'true')
   assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
+  assert.equal(built.env.VITE_FOOD_DIARY_ENABLED, 'false')
 
   for (const patch of [
     { VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co' },

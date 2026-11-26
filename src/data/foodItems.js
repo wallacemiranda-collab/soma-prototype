@@ -1,0 +1,58 @@
+export const foodDataSource = {
+  name: 'TACO, 4ª edição revisada e ampliada',
+  publisher: 'NEPA/UNICAMP',
+  year: 2011,
+  url: 'https://nepa.unicamp.br/wp-content/uploads/sites/27/2023/10/taco_4_edicao_ampliada_e_revisada.pdf',
+}
+
+// Curated sample for the isolated prototype; values are per 100 g as listed in TACO.
+export const foodItems = Object.freeze([
+  {
+    id: 'taco-003',
+    sourceCode: '3',
+    name: 'Arroz, tipo 1, cozido',
+    aliases: ['arroz', 'arroz branco', 'arroz tipo 1'],
+    kcal100g: 128,
+    carbsTotal100g: 28.1,
+    fiber100g: 1.6,
+    protein100g: 2.5,
+    lipids100g: 0.2,
+    source: 'TACO 4ª ed., NEPA/UNICAMP, 2011',
+  },
+  {
+    id: 'taco-561',
+    sourceCode: '561',
+    name: 'Feijão, carioca, cozido',
+    aliases: ['feijao', 'feijão', 'feijao carioca', 'feijão carioca', 'carioca'],
+    kcal100g: 76,
+    carbsTotal100g: 13.6,
+    fiber100g: 8.5,
+    protein100g: 4.8,
+    lipids100g: 0.5,
+    source: 'TACO 4ª ed., NEPA/UNICAMP, 2011',
+  },
+  {
+    id: 'taco-182',
+    sourceCode: '182',
+    name: 'Banana-prata, crua',
+    aliases: ['banana', 'banana prata', 'banana-prata'],
+    kcal100g: 98,
+    carbsTotal100g: 26,
+    fiber100g: 2,
+    protein100g: 1.3,
+    lipids100g: 0.1,
+    source: 'TACO 4ª ed., NEPA/UNICAMP, 2011',
+  },
+  {
+    id: 'taco-533',
+    sourceCode: '533',
+    name: 'Cuscuz de milho cozido com sal',
+    aliases: ['cuscuz', 'cuscuz de milho', 'cuscuz nordestino'],
+    kcal100g: 113,
+    carbsTotal100g: 25.3,
+    fiber100g: 2.1,
+    protein100g: 2.2,
+    lipids100g: 0.7,
+    source: 'TACO 4ª ed., NEPA/UNICAMP, 2011',
+  },
+])

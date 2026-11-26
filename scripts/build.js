@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const phase3Branch = 'codex/fase3-previa'
+const foodDiaryPreviewBranch = 'codex/fase9-diario-alimentar'
 const calculatorPreviewBranches = new Set([
   'codex/fase8-privacidade',
   'codex/publicar-calculadoras',
@@ -13,6 +14,7 @@ const calculatorPreviewProject = 'ctcsolobseerqnddahun'
 const calculatorProductionProject = 'trlwhngxqfgksiponpzk'
 const phase3Environment = {
   VITE_PHASE3_PREVIEW_ENABLED: 'true',
+  VITE_FOOD_DIARY_ENABLED: 'false',
   VITE_SUPABASE_URL: '',
   VITE_SUPABASE_ANON_KEY: '',
   VITE_HOMOLOGATION_ENABLED: 'false',
@@ -22,8 +24,21 @@ const phase3Environment = {
 }
 const calculatorPreviewEnvironment = {
   VITE_CALCULATORS_ENABLED: 'true',
+  VITE_FOOD_DIARY_ENABLED: 'false',
   VITE_HOMOLOGATION_ENABLED: 'true',
   VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
+  VITE_CLINICAL_PREVIEW_ENABLED: 'false',
+  VITE_PHASE3_PREVIEW_ENABLED: 'false',
+  VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
+  VITE_GOOGLE_AUTH_ENABLED: 'false',
+}
+const foodDiaryPreviewEnvironment = {
+  VITE_FOOD_DIARY_ENABLED: 'true',
+  VITE_SUPABASE_URL: '',
+  VITE_SUPABASE_ANON_KEY: '',
+  VITE_CALCULATORS_ENABLED: 'false',
+  VITE_HOMOLOGATION_ENABLED: 'false',
+  VITE_CLINICAL_INTEGRATION_ENABLED: 'false',
   VITE_CLINICAL_PREVIEW_ENABLED: 'false',
   VITE_PHASE3_PREVIEW_ENABLED: 'false',
   VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
@@ -64,10 +79,16 @@ export function getBuildEnvironment(environment = process.env) {
     isVercelPreview && env.VERCEL_GIT_COMMIT_REF === phase3Branch
   const isCalculatorPreview =
     isVercelPreview && calculatorPreviewBranches.has(env.VERCEL_GIT_COMMIT_REF)
+  const isFoodDiaryPreview =
+    isVercelPreview && env.VERCEL_GIT_COMMIT_REF === foodDiaryPreviewBranch
   const isCalculatorProduction = isVercelProduction
 
   if (isPhase3Preview) Object.assign(env, phase3Environment)
-  else if (isCalculatorPreview) {
+  else if (isFoodDiaryPreview) {
+    if (hasForbiddenClientKey(env))
+      throw new Error('The food diary preview cannot bundle private client keys.')
+    Object.assign(env, foodDiaryPreviewEnvironment)
+  } else if (isCalculatorPreview) {
     if (
       env.VITE_SUPABASE_URL !== `https://${calculatorPreviewProject}.supabase.co` ||
       !env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_') ||
@@ -93,11 +114,13 @@ export function getBuildEnvironment(environment = process.env) {
       VITE_CLINICAL_PREVIEW_ENABLED: 'false',
       VITE_PHASE3_PREVIEW_ENABLED: 'false',
       VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
+      VITE_FOOD_DIARY_ENABLED: 'false',
     })
   } else if (isVercelPreview) {
     env.VITE_PHASE3_PREVIEW_ENABLED = 'false'
     env.VITE_REMINDERS_HOMOLOGATION_ENABLED = 'false'
     env.VITE_CALCULATORS_ENABLED = 'false'
+    env.VITE_FOOD_DIARY_ENABLED = 'false'
   }
 
   return {
@@ -105,6 +128,7 @@ export function getBuildEnvironment(environment = process.env) {
     isPhase3Preview,
     isCalculatorPreview,
     isCalculatorProduction,
+    isFoodDiaryPreview,
   }
 }
 

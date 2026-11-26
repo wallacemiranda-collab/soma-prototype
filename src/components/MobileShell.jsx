@@ -8,13 +8,16 @@ import { PatientProvider } from '../contexts/PatientContext'
 import { useAuth } from '../contexts/AuthContext'
 import PatientState from './PatientState'
 import { ClinicalPreviewProvider } from '../contexts/ClinicalPreviewContext'
+import { FoodDiaryPreviewProvider } from '../contexts/FoodDiaryPreviewContext'
 
 export default function MobileShell() {
   const { user, isDemo } = useAuth()
   return (
     <PatientProvider key={`${user.id}:${isDemo}`}>
       <ClinicalPreviewProvider>
-        <ShellContent />
+        <FoodDiaryPreviewProvider>
+          <ShellContent />
+        </FoodDiaryPreviewProvider>
       </ClinicalPreviewProvider>
     </PatientProvider>
   )

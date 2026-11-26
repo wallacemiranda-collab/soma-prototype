@@ -41,6 +41,8 @@ import {
 
 const DoctorCalculator = lazy(() => import('./screens/DoctorCalculator'))
 const PatientCalculators = lazy(() => import('./screens/PatientCalculators'))
+const FoodDiary = lazy(() => import('./screens/FoodDiary'))
+const NutritionistPreview = lazy(() => import('./screens/NutritionistPreview'))
 
 export default function App() {
   useEffect(() => {
@@ -74,6 +76,22 @@ export default function App() {
                   <Route path="/home" element={<Home />} />
                   <Route path="/evolucao" element={<Evolution />} />
                   <Route path="/habitos" element={<Habits />} />
+                  <Route
+                    path="/alimentacao"
+                    element={
+                      <Suspense fallback={<p role="status">Carregando...</p>}>
+                        <FoodDiary />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/alimentacao/nutricionista"
+                    element={
+                      <Suspense fallback={<p role="status">Carregando...</p>}>
+                        <NutritionistPreview />
+                      </Suspense>
+                    }
+                  />
                   <Route path="/educacao" element={<Education />} />
                   <Route path="/perfil" element={<Profile />} />
                   <Route path="/registro" element={<PatientEntry />} />

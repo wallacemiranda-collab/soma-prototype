@@ -4,6 +4,7 @@ import AppHeader from '../components/AppHeader'
 import EatingBehaviorReflection from '../components/EatingBehaviorReflection'
 import ExternalQuestionnaireCard from '../components/ExternalQuestionnaireCard'
 import MetabolicCard from '../components/MetabolicCard'
+import { glp1EducationVideos, glp1TreatmentVisible } from '../config/phase10.js'
 
 const channel = 'https://www.youtube.com/@WallaceMiranda'
 const topics = [
@@ -123,6 +124,28 @@ export default function Education() {
         />
         <EatingBehaviorReflection />
       </section>
+      {glp1TreatmentVisible && (
+        <section className="mt-8" aria-labelledby="glp1-education-title">
+          <h2 id="glp1-education-title" className="text-lg font-semibold text-soma-900">
+            Obesidade é uma doença crônica: o que esperar do tratamento
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-soma-600">
+            Trilha educativa do canal Wallace Miranda. Os vídeos específicos ainda serão escolhidos pelo responsável clínico.
+          </p>
+          {glp1EducationVideos.length ? (
+            <div className="mt-3 space-y-3">
+              {glp1EducationVideos.map(({ id, title }) => (
+                <MetabolicCard key={id}>
+                  <h3 className="font-semibold">{title}</h3>
+                  <a className="mt-3 inline-block py-2 font-semibold text-soma-700" href={`https://www.youtube.com/watch?v=${encodeURIComponent(id)}`} target="_blank" rel="noreferrer">Abrir no YouTube</a>
+                </MetabolicCard>
+              ))}
+            </div>
+          ) : (
+            <MetabolicCard className="mt-3"><p className="text-sm text-soma-600">Trilha preparada; aguardando a seleção de 4 a 6 vídeos pelo Dr. Wallace.</p></MetabolicCard>
+          )}
+        </section>
+      )}
     </>
   )
 }

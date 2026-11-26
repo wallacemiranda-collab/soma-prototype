@@ -32,6 +32,8 @@ import { homologationEnabled } from './config/homologation'
 import { remindersHomologationEnabled } from './config/reminders'
 import { calculatorsEnabled } from './config/calculators.js'
 import { foodDiaryFlags } from './config/foodDiary.js'
+import { glp1TreatmentVisible } from './config/phase10.js'
+import { deviceImportVisible } from './config/deviceImport.js'
 import {
   ClinicalDoctorPreview,
   ClinicalHub,
@@ -46,6 +48,7 @@ const DoctorCalculator = lazy(() => import('./screens/DoctorCalculator'))
 const PatientCalculators = lazy(() => import('./screens/PatientCalculators'))
 const FoodDiary = lazy(() => import('./screens/FoodDiary'))
 const NutritionistPreview = lazy(() => import('./screens/NutritionistPreview'))
+const IntegrationsPreview = lazy(() => import('./screens/IntegrationsPreview'))
 
 export default function App() {
   useEffect(() => {
@@ -79,6 +82,16 @@ export default function App() {
                   <Route path="/home" element={<Home />} />
                   <Route path="/evolucao" element={<Evolution />} />
                   <Route path="/habitos" element={<Habits />} />
+                  {(glp1TreatmentVisible || deviceImportVisible) && (
+                    <Route
+                      path="/integracoes"
+                      element={
+                        <Suspense fallback={<p role="status">Carregando...</p>}>
+                          <IntegrationsPreview />
+                        </Suspense>
+                      }
+                    />
+                  )}
                   {foodDiaryFlags.previewVisible && (
                     <>
                       <Route

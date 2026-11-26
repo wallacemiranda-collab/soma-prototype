@@ -99,6 +99,42 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
   )
 })
 
+test('phase 10 and 11 flags are isolated to the feature preview branch with no backend', () => {
+  const input = {
+    VERCEL: '1',
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_REF: 'codex/fase10-11-previa',
+    VITE_SUPABASE_URL: 'https://production.example.invalid',
+    VITE_SUPABASE_ANON_KEY: 'must-not-be-in-this-preview',
+    VITE_GLP1_TREATMENT_ENABLED: 'false',
+    VITE_DEVICE_IMPORT_ENABLED: 'false',
+  }
+  const preview = getBuildEnvironment(input)
+  assert.equal(preview.isPhase10And11Preview, true)
+  assert.equal(preview.env.VITE_GLP1_TREATMENT_ENABLED, 'true')
+  assert.equal(preview.env.VITE_DEVICE_IMPORT_ENABLED, 'true')
+  assert.equal(preview.env.VITE_FOOD_DIARY_ENABLED, 'true')
+  assert.equal(preview.env.VITE_SUPABASE_URL, '')
+  assert.equal(preview.env.VITE_SUPABASE_ANON_KEY, '')
+  assert.equal(preview.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'false')
+  assert.equal(preview.env.VITE_GOOGLE_AUTH_ENABLED, 'false')
+  assert.equal(input.VITE_SUPABASE_URL, 'https://production.example.invalid')
+
+  const normalPreview = getBuildEnvironment({ ...input, VERCEL_GIT_COMMIT_REF: 'codex/another-feature' })
+  assert.equal(normalPreview.env.VITE_GLP1_TREATMENT_ENABLED, 'false')
+  assert.equal(normalPreview.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
+
+  const production = getBuildEnvironment({
+    ...input,
+    VERCEL_ENV: 'production',
+    VERCEL_GIT_COMMIT_REF: 'main',
+    VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_production_key',
+  })
+  assert.equal(production.env.VITE_GLP1_TREATMENT_ENABLED, 'false')
+  assert.equal(production.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
+})
+
 test('reminder homologation builds require a branch-scoped staging publishable key', () => {
   const source = {
     VERCEL: '1',

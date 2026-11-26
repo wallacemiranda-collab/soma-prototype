@@ -72,11 +72,14 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
     ...source,
     VERCEL_ENV: 'production',
     VERCEL_GIT_COMMIT_REF: 'main',
+    VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_production_test_key',
   })
   assert.equal(production.isPhase3Preview, false)
   assert.equal(production.env.VITE_PHASE3_PREVIEW_ENABLED, 'false')
-  assert.equal(production.env.VITE_SUPABASE_URL, source.VITE_SUPABASE_URL)
-  assert.equal(production.env.VITE_SUPABASE_ANON_KEY, source.VITE_SUPABASE_ANON_KEY)
+  assert.equal(production.env.VITE_SUPABASE_URL, 'https://trlwhngxqfgksiponpzk.supabase.co')
+  assert.equal(production.env.VITE_SUPABASE_ANON_KEY, 'sb_publishable_production_test_key')
+  assert.equal(production.env.VITE_CALCULATORS_ENABLED, 'true')
   const otherPreview = getBuildEnvironment({
     ...source,
     VERCEL_GIT_COMMIT_REF: 'codex/fase2-previa',

@@ -3,6 +3,7 @@ import { lstatSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { stagingProject } from './support.mjs'
+import { isValidVapidPublicKey } from '../../src/lib/webPush.js'
 
 export function collectSourceFiles(root) {
   const paths = [
@@ -27,7 +28,7 @@ export function collectSourceFiles(root) {
       info.isFile() &&
       !path.split('/').some((part) => part.startsWith('.')) &&
       (/\.(js|jsx|css|svg)$/.test(path) ||
-        path === 'public/manifest.webmanifest' ||
+        ['public/manifest.webmanifest', 'public/reminders-manifest.webmanifest'].includes(path) ||
         /^public\/icons\/endo-preview-(180|192|512)\.png$/.test(path))
     )
       paths.push(path)
@@ -52,13 +53,15 @@ export function collectSourceFiles(root) {
   })
 }
 
-export function collectPreviewFiles(root, key) {
+export function collectPreviewFiles(root, key, reminderPublicKey) {
   if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(key))
     throw new Error('Only a public staging key is allowed.')
+  if (!isValidVapidPublicKey(reminderPublicKey))
+    throw new Error('A public reminder push key is required.')
   const files = collectSourceFiles(root)
   const settings = files.find((file) => file.file === 'vercel.json')
   const config = JSON.parse(settings.data)
-  config.buildCommand = `env VITE_PHASE3_PREVIEW_ENABLED=false VITE_SUPABASE_URL=https://${stagingProject}.supabase.co VITE_SUPABASE_ANON_KEY=${key} VITE_HOMOLOGATION_ENABLED=true VITE_CLINICAL_INTEGRATION_ENABLED=true VITE_CLINICAL_PREVIEW_ENABLED=false VITE_GOOGLE_AUTH_ENABLED=false node node_modules/vite/bin/vite.js build`
+  config.buildCommand = `env VITE_PHASE3_PREVIEW_ENABLED=false VITE_SUPABASE_URL=https://${stagingProject}.supabase.co VITE_SUPABASE_ANON_KEY=${key} VITE_REMINDER_VAPID_PUBLIC_KEY=${reminderPublicKey} VITE_HOMOLOGATION_ENABLED=true VITE_REMINDERS_HOMOLOGATION_ENABLED=true VITE_CLINICAL_INTEGRATION_ENABLED=true VITE_CLINICAL_PREVIEW_ENABLED=false VITE_GOOGLE_AUTH_ENABLED=false node node_modules/vite/bin/vite.js build`
   config.installCommand = 'pnpm install --frozen-lockfile'
   config.outputDirectory = 'dist'
   config.framework = 'vite'
@@ -91,6 +94,7 @@ if (
   const result = collectPreviewFiles(
     process.cwd(),
     process.env.ENDO_STAGING_PUBLISHABLE_KEY,
+    process.env.ENDO_STAGING_REMINDER_VAPID_PUBLIC_KEY,
   )
   const chunks = []
   for (const file of result.files) {

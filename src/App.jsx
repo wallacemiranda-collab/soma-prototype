@@ -27,8 +27,11 @@ import { Phase3PwaProvider } from './contexts/Phase3PwaContext'
 import { phase3Preview } from './config/phase3Preview'
 import InstallPreview from './screens/InstallPreview'
 import ReminderPreview from './screens/ReminderPreview'
+import HomologationReminders from './screens/HomologationReminders'
 import { homologationEnabled } from './config/homologation'
+import { remindersHomologationEnabled } from './config/reminders'
 import { calculatorsEnabled } from './config/calculators.js'
+import { foodDiaryFlags } from './config/foodDiary.js'
 import {
   ClinicalDoctorPreview,
   ClinicalHub,
@@ -76,22 +79,26 @@ export default function App() {
                   <Route path="/home" element={<Home />} />
                   <Route path="/evolucao" element={<Evolution />} />
                   <Route path="/habitos" element={<Habits />} />
-                  <Route
-                    path="/alimentacao"
-                    element={
-                      <Suspense fallback={<p role="status">Carregando...</p>}>
-                        <FoodDiary />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/alimentacao/nutricionista"
-                    element={
-                      <Suspense fallback={<p role="status">Carregando...</p>}>
-                        <NutritionistPreview />
-                      </Suspense>
-                    }
-                  />
+                  {foodDiaryFlags.previewVisible && (
+                    <>
+                      <Route
+                        path="/alimentacao"
+                        element={
+                          <Suspense fallback={<p role="status">Carregando...</p>}>
+                            <FoodDiary />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="/alimentacao/nutricionista"
+                        element={
+                          <Suspense fallback={<p role="status">Carregando...</p>}>
+                            <NutritionistPreview />
+                          </Suspense>
+                        }
+                      />
+                    </>
+                  )}
                   <Route path="/educacao" element={<Education />} />
                   <Route path="/perfil" element={<Profile />} />
                   <Route path="/registro" element={<PatientEntry />} />
@@ -106,8 +113,17 @@ export default function App() {
                       }
                     />
                   )}
-                  {phase3Preview.allowed && (
-                    <Route path="/lembretes" element={<ReminderPreview />} />
+                  {(phase3Preview.allowed || remindersHomologationEnabled) && (
+                    <Route
+                      path="/lembretes"
+                      element={
+                        remindersHomologationEnabled ? (
+                          <HomologationReminders />
+                        ) : (
+                          <ReminderPreview />
+                        )
+                      }
+                    />
                   )}
                   <Route path="/modulos" element={<ClinicalHub />} />
                   <Route

@@ -1,0 +1,16 @@
+{
+  "id": "/lembretes",
+  "name": "Endo + Homologação",
+  "short_name": "Endo+ Teste",
+  "description": "Prévia de homologação com contas fictícias. Notificações genéricas, mediante autorização.",
+  "lang": "pt-BR",
+  "start_url": "/lembretes",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#1c75bc",
+  "icons": [
+    { "src": "/icons/endo-preview-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/endo-preview-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

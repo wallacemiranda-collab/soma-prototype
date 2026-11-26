@@ -37,6 +37,7 @@ test('preview upload is allowlisted and cannot include credentials, unrelated pr
   const result = collectPreviewFiles(
     new URL('../', import.meta.url).pathname,
     'sb_publishable_synthetic',
+    `B${'A'.repeat(86)}`,
   )
   assert.ok(result.files.length > 20)
   assert.ok(result.files.some((row) => row.file === 'pnpm-workspace.yaml'))
@@ -50,10 +51,15 @@ test('preview upload is allowlisted and cannot include credentials, unrelated pr
   )
   assert.equal(config.redirects.length, 4)
   assert.match(config.buildCommand, /VITE_HOMOLOGATION_ENABLED=true/)
+  assert.match(config.buildCommand, /VITE_REMINDER_VAPID_PUBLIC_KEY=/)
   assert.match(config.buildCommand, new RegExp(homologationProject))
   assert.ok(config.headers[0].headers.some((row) => row.key === 'X-Robots-Tag'))
   assert.equal(result.digest.length, 64)
   assert.throws(() =>
-    collectPreviewFiles(process.cwd(), 'sb_secret_not-public'),
+    collectPreviewFiles(
+      process.cwd(),
+      'sb_secret_not-public',
+      `B${'A'.repeat(86)}`,
+    ),
   )
 })

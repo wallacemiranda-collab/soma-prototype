@@ -4,6 +4,8 @@ import { resolve } from 'node:path'
 export const stagingProject = 'ctcsolobseerqnddahun'
 export const productionProject = 'trlwhngxqfgksiponpzk'
 export const stagingTables = [
+  'patient_reminder_preferences',
+  'patient_reminder_rules',
   'glucose_readings',
   'hypoglycemia_events',
   'hba1c_results',

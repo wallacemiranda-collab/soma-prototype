@@ -66,6 +66,7 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
   assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'false')
   assert.equal(built.env.VITE_GOOGLE_AUTH_ENABLED, 'false')
   assert.equal(built.env.VITE_FOOD_DIARY_ENABLED, 'false')
+  assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
   assert.equal(built.env.VITE_PHASE3_PREVIEW_ENABLED, 'true')
   assert.equal(source.VITE_SUPABASE_URL, 'https://production.example.invalid')
 
@@ -81,17 +82,57 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
   assert.equal(production.env.VITE_SUPABASE_URL, 'https://trlwhngxqfgksiponpzk.supabase.co')
   assert.equal(production.env.VITE_SUPABASE_ANON_KEY, 'sb_publishable_production_test_key')
   assert.equal(production.env.VITE_CALCULATORS_ENABLED, 'true')
+  assert.equal(production.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
+  assert.equal(production.env.VITE_GLP1_TREATMENT_ENABLED, 'false')
+  assert.equal(production.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
+  assert.equal(production.env.VITE_FOOD_DIARY_ENABLED, 'false')
   const otherPreview = getBuildEnvironment({
     ...source,
     VERCEL_GIT_COMMIT_REF: 'codex/fase2-previa',
   })
   assert.equal(otherPreview.isPhase3Preview, false)
   assert.equal(otherPreview.env.VITE_PHASE3_PREVIEW_ENABLED, 'false')
+  assert.equal(otherPreview.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
   assert.throws(
     () => getBuildEnvironment({ VERCEL: '1', VERCEL_ENV: 'preview' }),
     /branch metadata/,
   )
 })
+
+test('reminder homologation builds require a branch-scoped staging publishable key', () => {
+  const source = {
+    VERCEL: '1',
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_REF: 'codex/lembretes-homologacao',
+    VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_staging_key',
+    VITE_REMINDER_VAPID_PUBLIC_KEY: `B${'A'.repeat(86)}`,
+  }
+  const built = getBuildEnvironment(source)
+  assert.equal(built.isReminderHomologationPreview, true)
+  assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_PHASE3_PREVIEW_ENABLED, 'false')
+  assert.equal(built.env.VITE_GOOGLE_AUTH_ENABLED, 'false')
+
+  for (const patch of [
+    { VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co' },
+    { VITE_SUPABASE_URL: 'https://unrelated.supabase.co' },
+    { VITE_SUPABASE_ANON_KEY: 'sb_secret_not_for_browsers' },
+    { VITE_SUPABASE_SERVICE_ROLE_KEY: 'must-not-be-exposed' },
+  ])
+    assert.throws(
+      () => getBuildEnvironment({ ...source, ...patch }),
+      /staging URL, publishable staging key, and a valid public push key/,
+    )
+
+  const normalPreview = getBuildEnvironment({
+    ...source,
+    VERCEL_GIT_COMMIT_REF: 'codex/another-feature',
+  })
+  assert.equal(normalPreview.env.VITE_REMINDERS_HOMOLOGATION_ENABLED, 'false')
+})
+
 test('FIB-4 preview is limited to the homologation branch and backend', () => {
   const source = {
     VERCEL: '1',
@@ -126,7 +167,6 @@ test('FIB-4 preview is limited to the homologation branch and backend', () => {
   })
   assert.equal(regularPreview.env.VITE_CALCULATORS_ENABLED, 'false')
 })
-
 test('calculator release branch uses only the homologation backend in preview', () => {
   const built = getBuildEnvironment({
     VERCEL: '1',

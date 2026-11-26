@@ -1,0 +1,4 @@
+Device,Serial Number,Device Timestamp,Record Type,Historic Glucose mg/dL,Scan Glucose mg/dL
+Endo+ fictício,FAKE-001,2026-11-12 08:00,Historic Glucose,126,
+Endo+ fictício,FAKE-001,2026-11-12 08:15,Historic Glucose,132,
+Endo+ fictício,FAKE-001,2026-11-12 08:30,Historic Glucose,128,131

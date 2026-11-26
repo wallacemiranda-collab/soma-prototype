@@ -138,6 +138,30 @@ test('calculator release branch uses only the homologation backend in preview', 
   assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
 })
 
+test('PREVENT, FRAX, Mayo and patient FINDRISC preview uses only homologation', () => {
+  const source = {
+    VERCEL: '1',
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_REF: 'codex/prevent-frax-mayo-findrisc',
+    VITE_SUPABASE_URL: 'https://ctcsolobseerqnddahun.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_staging_key',
+    VITE_GOOGLE_AUTH_ENABLED: 'true',
+  }
+  const built = getBuildEnvironment(source)
+  assert.equal(built.isCalculatorPreview, true)
+  assert.equal(built.env.VITE_CALCULATORS_ENABLED, 'true')
+  assert.equal(built.env.VITE_HOMOLOGATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'true')
+  assert.equal(built.env.VITE_GOOGLE_AUTH_ENABLED, 'false')
+  assert.throws(
+    () => getBuildEnvironment({
+      ...source,
+      VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co',
+    }),
+    /homologation URL and a public staging key/,
+  )
+})
+
 test('production calculator builds require the official backend and a public key', () => {
   const source = {
     VERCEL: '1',

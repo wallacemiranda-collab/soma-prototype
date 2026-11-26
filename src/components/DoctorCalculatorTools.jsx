@@ -6,6 +6,7 @@ import { calculateFindrisc, findriscReferences } from '../lib/findrisc.js'
 import { calculateSarcF, sarcFReferences } from '../lib/sarcF.js'
 import { calculateAuditC, calculateGad7, calculatePhq9 } from '../lib/doctorScreeners.js'
 import MetabolicFormulaTools from './MetabolicFormulaTools.jsx'
+import ExternalClinicalTools from './ExternalClinicalTools.jsx'
 
 const answerOptions = [
   ['0', 'Nenhuma vez'],
@@ -90,24 +91,27 @@ function References({ items }) {
 
 export default function DoctorCalculatorTools({ patient }) {
   return (
-    <section className="space-y-3" aria-labelledby="professional-tools-title">
-      <div>
-        <h2 id="professional-tools-title" className="text-lg font-semibold text-soma-900">
-          Outras fórmulas e questionários
-        </h2>
-        <p className="mt-1 text-sm leading-6 text-soma-700">
-          Uso profissional. Exceto o FIB-4, os cálculos abaixo são temporários: não são gravados no prontuário nem compartilhados com o paciente.
-        </p>
-      </div>
-      <AnthropometryTool />
-      <FindriscTool />
-      <SarcFTool />
-      <EagTool />
-      <MentalHealthTool kind="phq9" />
-      <MentalHealthTool kind="gad7" />
-      <AuditCTool />
-      <MetabolicFormulaTools patient={patient} />
-    </section>
+    <>
+      <ExternalClinicalTools audience="professional" />
+      <section className="space-y-3" aria-labelledby="professional-tools-title">
+        <div>
+          <h2 id="professional-tools-title" className="text-lg font-semibold text-soma-900">
+            Outras fórmulas e questionários
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-soma-700">
+            Uso profissional. Exceto o FIB-4, os cálculos abaixo são temporários: não são gravados no prontuário nem compartilhados com o paciente.
+          </p>
+        </div>
+        <AnthropometryTool />
+        <FindriscTool />
+        <SarcFTool />
+        <EagTool />
+        <MentalHealthTool kind="phq9" />
+        <MentalHealthTool kind="gad7" />
+        <AuditCTool />
+        <MetabolicFormulaTools patient={patient} />
+      </section>
+    </>
   )
 }
 

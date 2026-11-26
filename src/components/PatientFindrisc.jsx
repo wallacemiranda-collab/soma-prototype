@@ -86,8 +86,8 @@ export default function PatientFindrisc({
       <h2 className="text-lg font-semibold text-soma-900">FINDRISC</h2>
       <p className="mt-2 text-sm leading-6 text-soma-700">
         Questionário de triagem para estimar risco futuro de diabetes tipo 2.
-        Esta é uma prévia para revisão clínica; respostas e resultados não são
-        salvos no histórico.
+        Respostas e resultado ficam somente nesta tela e não são salvos no
+        histórico.
       </p>
       <p className="mt-3 rounded-xl bg-soma-50 p-3 text-sm leading-6 text-soma-800">
         As faixas abaixo são as publicadas pelo Ministério da Saúde. A versão
@@ -229,7 +229,7 @@ export default function PatientFindrisc({
 
         <Feedback error={error} />
         <PrimaryButton type="submit" disabled={loading || hasDiabetes === 'yes'}>
-          Calcular prévia
+          Calcular FINDRISC
         </PrimaryButton>
       </form>
 

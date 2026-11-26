@@ -7,6 +7,7 @@ const phase3Branch = 'codex/fase3-previa'
 const calculatorPreviewBranches = new Set([
   'codex/fase8-privacidade',
   'codex/publicar-calculadoras',
+  'codex/prevent-frax-mayo-findrisc',
 ])
 const calculatorPreviewProject = 'ctcsolobseerqnddahun'
 const calculatorProductionProject = 'trlwhngxqfgksiponpzk'

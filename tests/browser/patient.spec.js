@@ -89,7 +89,7 @@ test('demo reload and direct URLs preserve the fictitious session and logout cle
   expect(ui.data().entries).toEqual([])
 })
 
-test('patient calculator tab stays visible and shows external tools only', async ({
+test('patient calculator tab includes FINDRISC and clearly separated external tools', async ({
   page,
   ui,
 }) => {
@@ -97,14 +97,26 @@ test('patient calculator tab stays visible and shows external tools only', async
   await expect(page.getByRole('link', { name: 'Cálculos', exact: true })).toBeVisible()
   await page.getByRole('link', { name: 'Cálculos', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Calculadoras', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'FINDRISC', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Calcular FINDRISC', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir calculadora oficial PREVENT (AHA)' }))
+    .toHaveAttribute('href', 'https://professional.heart.org/en/guidelines-and-statements/prevent-calculator')
+  await expect(page.getByRole('link', { name: 'Abrir calculadora oficial FRAX' }))
+    .toHaveAttribute('href', 'https://www.fraxplus.org/pt/calculation-tool/')
+  await expect(page.getByRole('link', { name: 'Conhecer o modelo e suas limitações' }))
+    .toHaveAttribute('href', 'https://glp1regainrisk.com/about')
+  await expect(page.getByText('não destinada ao uso pelo paciente nem a decisões clínicas'))
+    .toBeVisible()
   await expect(page.getByText('STOP-Bang', { exact: true })).toBeVisible()
   await expect(page.getByText('Escala de Sonolência de Epworth', { exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Abrir ferramenta oficial do STOP-Bang' }))
     .toHaveAttribute('href', 'https://www.stopbang.ca/')
   await expect(page.getByRole('link', { name: 'Acessar o site oficial da Epworth' }))
     .toHaveAttribute('href', 'https://epworthsleepinessscale.com/')
-  for (const label of ['FINDRISC', 'SARC-F', 'PHQ-9', 'GAD-7', 'AUDIT-C'])
+  for (const label of ['SARC-F', 'PHQ-9', 'GAD-7', 'AUDIT-C'])
     await expect(page.getByText(label, { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Abrir calculadora de pesquisa da Mayo Clinic' }))
+    .toHaveCount(0)
 })
 
 test('daily measures save, survive reload and update the same row', async ({

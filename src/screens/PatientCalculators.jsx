@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { Card, Feedback } from '../components/ui'
 import { calculatorsEnabled } from '../config/calculators.js'
 import { useAuth } from '../contexts/AuthContext'
-import ExternalQuestionnaireCard from '../components/ExternalQuestionnaireCard'
+import { usePatient } from '../contexts/PatientContext'
+import ExternalToolCard from '../components/ExternalToolCard'
+import ExternalClinicalTools from '../components/ExternalClinicalTools'
+import PatientFindrisc from '../components/PatientFindrisc'
 import EatingBehaviorReflection from '../components/EatingBehaviorReflection'
 import { calculatorRepository } from '../services/calculatorService.js'
 
@@ -32,6 +35,7 @@ function dateLabel(value) {
 
 export default function PatientCalculators() {
   const { isDemo, user } = useAuth()
+  const { profile, entries, isLoading: patientLoading } = usePatient()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -89,11 +93,24 @@ export default function PatientCalculators() {
         </p>
       </Card>
 
+      <section className="space-y-3" aria-labelledby="patient-screening-title">
+        <h2 id="patient-screening-title" className="text-lg font-semibold text-soma-900">
+          Triagem no Endo +
+        </h2>
+        <PatientFindrisc
+          profile={profile}
+          entries={entries}
+          loading={patientLoading}
+        />
+      </section>
+
+      <ExternalClinicalTools audience="patient" />
+
       <section className="space-y-3" aria-labelledby="external-tools-title">
         <h2 id="external-tools-title" className="text-lg font-semibold text-soma-900">
           Questionários em sites externos
         </h2>
-        <ExternalQuestionnaireCard
+        <ExternalToolCard
           title="Fenótipos do comportamento alimentar (EFCA)"
           description="A EFCA é uma escala externa. O site pode solicitar um código de acesso; o Endo + não reproduz as perguntas nem calcula o resultado."
           href="https://comportamientoalimentario.com/"
@@ -102,14 +119,14 @@ export default function PatientCalculators() {
 
         <EatingBehaviorReflection />
 
-        <ExternalQuestionnaireCard
+        <ExternalToolCard
           title="STOP-Bang"
           description="Questionário externo de triagem para apneia obstrutiva do sono. Enquanto o uso não estiver licenciado no Endo +, acesse a ferramenta no site oficial."
           href="https://www.stopbang.ca/"
           linkLabel="Abrir ferramenta oficial do STOP-Bang"
         />
 
-        <ExternalQuestionnaireCard
+        <ExternalToolCard
           title="Escala de Sonolência de Epworth"
           description="O Endo + não reproduz a escala. Enquanto o uso não estiver licenciado, acesse o site oficial do instrumento."
           href="https://epworthsleepinessscale.com/"

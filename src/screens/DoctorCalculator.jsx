@@ -323,7 +323,7 @@ export default function DoctorCalculator() {
         </Card>
       )}
 
-      <DoctorCalculatorTools />
+      <DoctorCalculatorTools patient={patient} />
 
       <Card>
         <h2 className="font-semibold text-soma-900">Referências</h2>

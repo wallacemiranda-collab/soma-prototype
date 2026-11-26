@@ -5,6 +5,7 @@ import { calculateEagMgDl, eagReferences } from '../lib/eag.js'
 import { calculateFindrisc, findriscReferences } from '../lib/findrisc.js'
 import { calculateSarcF, sarcFReferences } from '../lib/sarcF.js'
 import { calculateAuditC, calculateGad7, calculatePhq9 } from '../lib/doctorScreeners.js'
+import MetabolicFormulaTools from './MetabolicFormulaTools.jsx'
 
 const answerOptions = [
   ['0', 'Nenhuma vez'],
@@ -87,7 +88,7 @@ function References({ items }) {
   )
 }
 
-export default function DoctorCalculatorTools() {
+export default function DoctorCalculatorTools({ patient }) {
   return (
     <section className="space-y-3" aria-labelledby="professional-tools-title">
       <div>
@@ -105,6 +106,7 @@ export default function DoctorCalculatorTools() {
       <MentalHealthTool kind="phq9" />
       <MentalHealthTool kind="gad7" />
       <AuditCTool />
+      <MetabolicFormulaTools patient={patient} />
     </section>
   )
 }

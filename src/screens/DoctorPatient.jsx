@@ -7,6 +7,7 @@ import { formatNumber, sexOptions } from '../lib/patientData'
 import { sharingRepository } from '../services/sharingService'
 import { clinicalIntegrationEnabled } from '../config/clinicalPreview'
 import { calculatorsEnabled } from '../config/calculators.js'
+import { cgmPilotEnabled } from '../config/cgmPilot.js'
 import { useDoctor } from '../components/DoctorShell'
 
 export default function DoctorPatient() {
@@ -98,6 +99,15 @@ export default function DoctorPatient() {
                 className="mb-4 block py-3 font-semibold text-soma-700"
               >
                 Consultar acompanhamentos clínicos
+              </Link>
+            )}
+            {cgmPilotEnabled && professional?.profession === 'Medicina' && professional?.council === 'CRM' && (
+              <Link
+                to={`/profissional/pacientes/${patientId}/integracoes`}
+                state={{ patientName: data.profile.full_name }}
+                className="mb-4 block py-3 font-semibold text-soma-700"
+              >
+                Consultar dados de glicose autorizados
               </Link>
             )}
             <h1 className="text-2xl font-semibold">{data.profile.full_name}</h1>

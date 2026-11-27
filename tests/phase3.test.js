@@ -100,10 +100,12 @@ test('GLP-1 and CGM features stay disabled outside the review preview', () => {
     VITE_SUPABASE_ANON_KEY: 'sb_publishable_production_key',
     VITE_GLP1_TREATMENT_ENABLED: 'true',
     VITE_DEVICE_IMPORT_ENABLED: 'true',
+    VITE_CGM_PILOT_ENABLED: 'true',
   }
   const production = getBuildEnvironment(source)
   assert.equal(production.env.VITE_GLP1_TREATMENT_ENABLED, 'false')
   assert.equal(production.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
+  assert.equal(production.env.VITE_CGM_PILOT_ENABLED, 'false')
 
   const normalPreview = getBuildEnvironment({
     ...source,
@@ -112,6 +114,7 @@ test('GLP-1 and CGM features stay disabled outside the review preview', () => {
   })
   assert.equal(normalPreview.env.VITE_GLP1_TREATMENT_ENABLED, 'false')
   assert.equal(normalPreview.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
+  assert.equal(normalPreview.env.VITE_CGM_PILOT_ENABLED, 'false')
 })
 test('FIB-4 preview is limited to the homologation branch and backend', () => {
   const source = {

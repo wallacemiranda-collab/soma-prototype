@@ -11,10 +11,24 @@ const calculatorPreviewBranches = new Set([
 ])
 const calculatorPreviewProject = 'ctcsolobseerqnddahun'
 const calculatorProductionProject = 'trlwhngxqfgksiponpzk'
+const cgmPilotBranch = 'codex/cgm-patient-pilot'
+const cgmPilotEnvironment = {
+  VITE_CALCULATORS_ENABLED: 'false',
+  VITE_GLP1_TREATMENT_ENABLED: 'false',
+  VITE_DEVICE_IMPORT_ENABLED: 'false',
+  VITE_CGM_PILOT_ENABLED: 'true',
+  VITE_HOMOLOGATION_ENABLED: 'true',
+  VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
+  VITE_CLINICAL_PREVIEW_ENABLED: 'false',
+  VITE_PHASE3_PREVIEW_ENABLED: 'false',
+  VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
+  VITE_GOOGLE_AUTH_ENABLED: 'false',
+}
 const phase3Environment = {
   VITE_PHASE3_PREVIEW_ENABLED: 'true',
   VITE_GLP1_TREATMENT_ENABLED: 'false',
   VITE_DEVICE_IMPORT_ENABLED: 'false',
+  VITE_CGM_PILOT_ENABLED: 'false',
   VITE_SUPABASE_URL: '',
   VITE_SUPABASE_ANON_KEY: '',
   VITE_HOMOLOGATION_ENABLED: 'false',
@@ -26,6 +40,7 @@ const calculatorPreviewEnvironment = {
   VITE_CALCULATORS_ENABLED: 'true',
   VITE_GLP1_TREATMENT_ENABLED: 'false',
   VITE_DEVICE_IMPORT_ENABLED: 'false',
+  VITE_CGM_PILOT_ENABLED: 'false',
   VITE_HOMOLOGATION_ENABLED: 'true',
   VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
   VITE_CLINICAL_PREVIEW_ENABLED: 'false',
@@ -66,12 +81,24 @@ export function getBuildEnvironment(environment = process.env) {
 
   const isPhase3Preview =
     isVercelPreview && env.VERCEL_GIT_COMMIT_REF === phase3Branch
+  const isCgmPilotPreview =
+    isVercelPreview && env.VERCEL_GIT_COMMIT_REF === cgmPilotBranch
   const isCalculatorPreview =
     isVercelPreview && calculatorPreviewBranches.has(env.VERCEL_GIT_COMMIT_REF)
   const isCalculatorProduction = isVercelProduction
 
   if (isPhase3Preview) Object.assign(env, phase3Environment)
-  else if (isCalculatorPreview) {
+  else if (isCgmPilotPreview) {
+    if (
+      env.VITE_SUPABASE_URL !== `https://${calculatorPreviewProject}.supabase.co` ||
+      !env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_') ||
+      hasForbiddenClientKey(env)
+    )
+      throw new Error(
+        'CGM pilot preview builds require only the homologation URL and a public staging key.',
+      )
+    Object.assign(env, cgmPilotEnvironment)
+  } else if (isCalculatorPreview) {
     if (
       env.VITE_SUPABASE_URL !== `https://${calculatorPreviewProject}.supabase.co` ||
       !env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_') ||
@@ -99,6 +126,7 @@ export function getBuildEnvironment(environment = process.env) {
       VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
       VITE_GLP1_TREATMENT_ENABLED: 'false',
       VITE_DEVICE_IMPORT_ENABLED: 'false',
+      VITE_CGM_PILOT_ENABLED: 'false',
     })
   } else if (isVercelPreview) {
     env.VITE_PHASE3_PREVIEW_ENABLED = 'false'
@@ -106,11 +134,13 @@ export function getBuildEnvironment(environment = process.env) {
     env.VITE_CALCULATORS_ENABLED = 'false'
     env.VITE_GLP1_TREATMENT_ENABLED = 'false'
     env.VITE_DEVICE_IMPORT_ENABLED = 'false'
+    env.VITE_CGM_PILOT_ENABLED = 'false'
   }
 
   return {
     env,
     isPhase3Preview,
+    isCgmPilotPreview,
     isCalculatorPreview,
     isCalculatorProduction,
   }

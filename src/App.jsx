@@ -31,6 +31,7 @@ import { homologationEnabled } from './config/homologation'
 import { calculatorsEnabled } from './config/calculators.js'
 import { glp1TreatmentVisible } from './config/phase10.js'
 import { deviceImportVisible } from './config/deviceImport.js'
+import { cgmPilotEnabled } from './config/cgmPilot.js'
 import {
   ClinicalDoctorPreview,
   ClinicalHub,
@@ -43,7 +44,8 @@ import {
 
 const DoctorCalculator = lazy(() => import('./screens/DoctorCalculator'))
 const PatientCalculators = lazy(() => import('./screens/PatientCalculators'))
-const IntegrationsPreview = lazy(() => import('./screens/IntegrationsPreview'))
+const IntegrationsEntry = lazy(() => import('./screens/IntegrationsEntry'))
+const CgmDoctorPatientPilot = lazy(() => import('./screens/CgmDoctorPatientPilot'))
 
 export default function App() {
   useEffect(() => {
@@ -77,12 +79,12 @@ export default function App() {
                   <Route path="/home" element={<Home />} />
                   <Route path="/evolucao" element={<Evolution />} />
                   <Route path="/habitos" element={<Habits />} />
-                  {(glp1TreatmentVisible || deviceImportVisible) && (
+                  {(glp1TreatmentVisible || deviceImportVisible || cgmPilotEnabled) && (
                     <Route
                       path="/integracoes"
                       element={
                         <Suspense fallback={<p role="status">Carregando...</p>}>
-                          <IntegrationsPreview />
+                          <IntegrationsEntry />
                         </Suspense>
                       }
                     />
@@ -119,6 +121,16 @@ export default function App() {
                   />
                 </Route>
                 <Route element={<DoctorShell />}>
+                  {cgmPilotEnabled && (
+                    <Route
+                      path="/profissional/pacientes/:patientId/integracoes"
+                      element={
+                        <Suspense fallback={<p role="status">Carregando...</p>}>
+                          <CgmDoctorPatientPilot />
+                        </Suspense>
+                      }
+                    />
+                  )}
                   {calculatorsEnabled && (
                     <Route
                       path="/profissional/pacientes/:patientId/calculadoras"

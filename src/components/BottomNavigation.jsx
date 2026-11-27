@@ -10,6 +10,7 @@ import {
 import { NavLink } from 'react-router-dom'
 import { glp1TreatmentVisible } from '../config/phase10.js'
 import { deviceImportVisible } from '../config/deviceImport.js'
+import { cgmPilotEnabled } from '../config/cgmPilot.js'
 
 const patientItems = [
   { path: '/home', label: 'Início', icon: House },
@@ -37,7 +38,7 @@ export default function BottomNavigation() {
       aria-label="Navegação principal"
       className="safe-bottom fixed bottom-0 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 justify-around border-t border-soma-100 bg-white/95 px-2 pt-3 backdrop-blur"
     >
-      {[...patientItems, calculatorItem, ...(glp1TreatmentVisible || deviceImportVisible ? [integrationsItem] : [])].map(
+      {[...patientItems, calculatorItem, ...(glp1TreatmentVisible || deviceImportVisible || cgmPilotEnabled ? [integrationsItem] : [])].map(
         ({ path, label, icon: Icon }) => (
           <NavLink
             key={path}

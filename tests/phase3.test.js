@@ -91,6 +91,28 @@ test('only the isolated Vercel preview branch receives demo build settings', () 
     /branch metadata/,
   )
 })
+test('GLP-1 and CGM features stay disabled outside the review preview', () => {
+  const source = {
+    VERCEL: '1',
+    VERCEL_ENV: 'production',
+    VERCEL_GIT_COMMIT_REF: 'main',
+    VITE_SUPABASE_URL: 'https://trlwhngxqfgksiponpzk.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'sb_publishable_production_key',
+    VITE_GLP1_TREATMENT_ENABLED: 'true',
+    VITE_DEVICE_IMPORT_ENABLED: 'true',
+  }
+  const production = getBuildEnvironment(source)
+  assert.equal(production.env.VITE_GLP1_TREATMENT_ENABLED, 'false')
+  assert.equal(production.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
+
+  const normalPreview = getBuildEnvironment({
+    ...source,
+    VERCEL_ENV: 'preview',
+    VERCEL_GIT_COMMIT_REF: 'codex/fase10-11-release',
+  })
+  assert.equal(normalPreview.env.VITE_GLP1_TREATMENT_ENABLED, 'false')
+  assert.equal(normalPreview.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
+})
 test('FIB-4 preview is limited to the homologation branch and backend', () => {
   const source = {
     VERCEL: '1',

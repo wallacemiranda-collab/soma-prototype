@@ -29,6 +29,8 @@ import InstallPreview from './screens/InstallPreview'
 import ReminderPreview from './screens/ReminderPreview'
 import { homologationEnabled } from './config/homologation'
 import { calculatorsEnabled } from './config/calculators.js'
+import { glp1TreatmentVisible } from './config/phase10.js'
+import { deviceImportVisible } from './config/deviceImport.js'
 import {
   ClinicalDoctorPreview,
   ClinicalHub,
@@ -41,6 +43,7 @@ import {
 
 const DoctorCalculator = lazy(() => import('./screens/DoctorCalculator'))
 const PatientCalculators = lazy(() => import('./screens/PatientCalculators'))
+const IntegrationsPreview = lazy(() => import('./screens/IntegrationsPreview'))
 
 export default function App() {
   useEffect(() => {
@@ -74,6 +77,16 @@ export default function App() {
                   <Route path="/home" element={<Home />} />
                   <Route path="/evolucao" element={<Evolution />} />
                   <Route path="/habitos" element={<Habits />} />
+                  {(glp1TreatmentVisible || deviceImportVisible) && (
+                    <Route
+                      path="/integracoes"
+                      element={
+                        <Suspense fallback={<p role="status">Carregando...</p>}>
+                          <IntegrationsPreview />
+                        </Suspense>
+                      }
+                    />
+                  )}
                   <Route path="/educacao" element={<Education />} />
                   <Route path="/perfil" element={<Profile />} />
                   <Route path="/registro" element={<PatientEntry />} />

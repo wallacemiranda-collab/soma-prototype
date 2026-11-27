@@ -13,6 +13,8 @@ const calculatorPreviewProject = 'ctcsolobseerqnddahun'
 const calculatorProductionProject = 'trlwhngxqfgksiponpzk'
 const phase3Environment = {
   VITE_PHASE3_PREVIEW_ENABLED: 'true',
+  VITE_GLP1_TREATMENT_ENABLED: 'false',
+  VITE_DEVICE_IMPORT_ENABLED: 'false',
   VITE_SUPABASE_URL: '',
   VITE_SUPABASE_ANON_KEY: '',
   VITE_HOMOLOGATION_ENABLED: 'false',
@@ -22,6 +24,8 @@ const phase3Environment = {
 }
 const calculatorPreviewEnvironment = {
   VITE_CALCULATORS_ENABLED: 'true',
+  VITE_GLP1_TREATMENT_ENABLED: 'false',
+  VITE_DEVICE_IMPORT_ENABLED: 'false',
   VITE_HOMOLOGATION_ENABLED: 'true',
   VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
   VITE_CLINICAL_PREVIEW_ENABLED: 'false',
@@ -93,11 +97,15 @@ export function getBuildEnvironment(environment = process.env) {
       VITE_CLINICAL_PREVIEW_ENABLED: 'false',
       VITE_PHASE3_PREVIEW_ENABLED: 'false',
       VITE_REMINDERS_HOMOLOGATION_ENABLED: 'false',
+      VITE_GLP1_TREATMENT_ENABLED: 'false',
+      VITE_DEVICE_IMPORT_ENABLED: 'false',
     })
   } else if (isVercelPreview) {
     env.VITE_PHASE3_PREVIEW_ENABLED = 'false'
     env.VITE_REMINDERS_HOMOLOGATION_ENABLED = 'false'
     env.VITE_CALCULATORS_ENABLED = 'false'
+    env.VITE_GLP1_TREATMENT_ENABLED = 'false'
+    env.VITE_DEVICE_IMPORT_ENABLED = 'false'
   }
 
   return {

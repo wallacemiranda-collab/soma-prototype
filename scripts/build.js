@@ -14,6 +14,7 @@ const calculatorProductionProject = 'trlwhngxqfgksiponpzk'
 const cgmPilotBranch = 'codex/cgm-patient-pilot'
 const cgmPilotEnvironment = {
   VITE_CALCULATORS_ENABLED: 'false',
+  VITE_PATIENT_CALCULATORS_ENABLED: 'true',
   VITE_GLP1_TREATMENT_ENABLED: 'false',
   VITE_DEVICE_IMPORT_ENABLED: 'false',
   VITE_CGM_PILOT_ENABLED: 'true',
@@ -25,6 +26,7 @@ const cgmPilotEnvironment = {
   VITE_GOOGLE_AUTH_ENABLED: 'false',
 }
 const phase3Environment = {
+  VITE_PATIENT_CALCULATORS_ENABLED: 'false',
   VITE_PHASE3_PREVIEW_ENABLED: 'true',
   VITE_GLP1_TREATMENT_ENABLED: 'false',
   VITE_DEVICE_IMPORT_ENABLED: 'false',
@@ -119,6 +121,7 @@ export function getBuildEnvironment(environment = process.env) {
       )
     Object.assign(env, {
       VITE_CALCULATORS_ENABLED: 'true',
+      VITE_PATIENT_CALCULATORS_ENABLED: 'false',
       VITE_HOMOLOGATION_ENABLED: 'false',
       VITE_CLINICAL_INTEGRATION_ENABLED: 'true',
       VITE_CLINICAL_PREVIEW_ENABLED: 'false',
@@ -132,6 +135,7 @@ export function getBuildEnvironment(environment = process.env) {
     env.VITE_PHASE3_PREVIEW_ENABLED = 'false'
     env.VITE_REMINDERS_HOMOLOGATION_ENABLED = 'false'
     env.VITE_CALCULATORS_ENABLED = 'false'
+    env.VITE_PATIENT_CALCULATORS_ENABLED = 'false'
     env.VITE_GLP1_TREATMENT_ENABLED = 'false'
     env.VITE_DEVICE_IMPORT_ENABLED = 'false'
     env.VITE_CGM_PILOT_ENABLED = 'false'

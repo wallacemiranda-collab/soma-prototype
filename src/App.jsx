@@ -28,7 +28,7 @@ import { phase3Preview } from './config/phase3Preview'
 import InstallPreview from './screens/InstallPreview'
 import ReminderPreview from './screens/ReminderPreview'
 import { homologationEnabled } from './config/homologation'
-import { calculatorsEnabled } from './config/calculators.js'
+import { calculatorsEnabled, patientCalculatorsEnabled } from './config/calculators.js'
 import { glp1TreatmentVisible } from './config/phase10.js'
 import { deviceImportVisible } from './config/deviceImport.js'
 import { cgmPilotEnabled } from './config/cgmPilot.js'
@@ -93,7 +93,7 @@ export default function App() {
                   <Route path="/perfil" element={<Profile />} />
                   <Route path="/registro" element={<PatientEntry />} />
                   <Route path="/compartilhar" element={<Sharing />} />
-                  {calculatorsEnabled && (
+                  {patientCalculatorsEnabled && (
                     <Route
                       path="/calculadoras"
                       element={

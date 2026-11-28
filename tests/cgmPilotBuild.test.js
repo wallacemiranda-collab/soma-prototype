@@ -24,6 +24,8 @@ test('only the dedicated preview branch can enable CGM with the homologation bac
   assert.equal(result.env.VITE_CGM_PILOT_ENABLED, 'true')
   assert.equal(result.env.VITE_HOMOLOGATION_ENABLED, 'true')
   assert.equal(result.env.VITE_CLINICAL_INTEGRATION_ENABLED, 'true')
+  assert.equal(result.env.VITE_CALCULATORS_ENABLED, 'false')
+  assert.equal(result.env.VITE_PATIENT_CALCULATORS_ENABLED, 'true')
   assert.equal(result.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
   assert.equal(result.env.VITE_GLP1_TREATMENT_ENABLED, 'false')
   assert.equal(result.env.VITE_SUPABASE_URL, 'https://ctcsolobseerqnddahun.supabase.co')
@@ -42,6 +44,7 @@ test('CGM preview fails closed for wrong project, non-public key, or secrets', (
 test('other previews and production keep the CGM pilot disabled', () => {
   const otherPreview = getBuildEnvironment(previewEnvironment({ VERCEL_GIT_COMMIT_REF: 'main' }))
   assert.equal(otherPreview.env.VITE_CGM_PILOT_ENABLED, 'false')
+  assert.equal(otherPreview.env.VITE_PATIENT_CALCULATORS_ENABLED, 'false')
 
   const production = getBuildEnvironment({
     VERCEL: '1',
@@ -50,5 +53,6 @@ test('other previews and production keep the CGM pilot disabled', () => {
     VITE_SUPABASE_ANON_KEY: 'sb_publishable_production',
   })
   assert.equal(production.env.VITE_CGM_PILOT_ENABLED, 'false')
+  assert.equal(production.env.VITE_PATIENT_CALCULATORS_ENABLED, 'false')
   assert.equal(production.env.VITE_DEVICE_IMPORT_ENABLED, 'false')
 })
